@@ -1,0 +1,1269 @@
+=== PAGE 14 ===
+14 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+COMPONENT
+RESPONSIBILITY
+RUNS ON
+Weighing
+platform
+Measure total bin mass
+Four load cells between two boards
+Gateway
+Receive, store, analyse, alert, serve dashboard
+Raspberry Pi CM4
+Dashboard
+Show status, actions, charts, records
+Operator's phone browser (installable
+web app)
+Cloud sync (P2)
+Multi-site supervisor view
+Any hosted service
+2.3 Data flow
+1. The node wakes on its timer, or on a LIS3DH interrupt when the lid moves.
+2. It switches on sensor power (3V3_S), reads all sensors, and switches sensor power off.
+3. It builds the payload, signs it, and transmits.
+4. It opens a 2-second receive window for the acknowledgement and any command.
+5. The gateway's radio service checks the signature and sequence number, decodes the packet and
+publishes JSON to MQTT.
+6. The ingest service stores the reading. The engine computes calibrated values, events, respiration
+rate, heat forecast and readiness, and evaluates alert rules.
+7. The API pushes updates to open dashboards over WebSocket. The notifier sounds the buzzer and
+sends Telegram messages when online.
+8. Commands (misting, configuration) travel back through MQTT to the radio service and ride on the
+next acknowledgement.
+2.4 Design principles
+Offline first. Every P0 feature works with no internet.
+Safety at the edge. The node protects the bed on its own if the gateway is down.
+Portable gateway. The gateway software runs on any Linux machine with the LoRa radio attached
+over USB, so a laptop can stand in for the CM4.
+Trends over absolute claims. Respiration and gas readings are used as trends against the bin's
+own history, not as laboratory measurements.
+Replicable. Commodity parts, open source, documented calibration.
+3. Hardware
+3.1 Owned inventory
+From Robu invoice INV2627/203030 and two Amazon orders, all dated 20 August 2026.
+PART
+QTY
+COST (₹, INCL.
+GST)
+ROLE
+RAKwireless RAK4631 WisBlock core (nRF52840 +
+SX1262), IN865
+1
+2,999
+Node microcontroller and LoRa radio
+RAKwireless WisBlock Base
+1
+1,639
+Node carrier: battery and solar inputs,
+switched 3V3_S rail
+Waveshare SX1262 868M LoRa HAT (UART, on-board
+CP2102 USB)
+1
+2,809
+Gateway radio
+
+=== PAGE 15 ===
+15 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+PART
+QTY
+COST (₹, INCL.
+GST)
+ROLE
+Raspberry Pi CM4 (CM4102032: 2 GB RAM, 32 GB eMMC,
+wireless)
+1
+11,275
+Gateway computer
+CM4 heatsink
+1
+299
+Gateway cooling
+DFRobot Gravity SCD41 CO2 sensor (400 to 5,000 ppm)
+1
+6,539
+Respiration measurement
+SmartElex BME688 environmental sensor
+1
+1,019
+Gas resistance, humidity, pressure in the lid
+pod
+SmartElex TMP117 high-precision temperature sensor
+1
+162
+Ambient reference and probe calibration
+reference
+DS18B20 waterproof temperature probe, 1 m
+5
+455
+Bed temperature at five points
+Adafruit LIS3DH accelerometer
+1
+799
+Lid open and close detection; wake interrupt
+M5Stack Weight I2C Unit (STM32 + HX711)
+1
+609
+Load cell interface
+INMP441 I2S MEMS microphone
+1
+149
+Not used in the MVP
+Waveshare industrial USB hub (switchable dual host)
+1
+2,139
+Gateway peripherals: radio over USB, backup
+storage
+865 to 868 MHz rubber duck antenna, 1.8 dBi
+1
+125
+Node antenna
+IPEX to RP-SMA female pigtail, 20 cm
+1
+107
+Node antenna bulkhead
+PG7 polyamide cable gland
+4
+40
+Enclosure cable entries
+Lever splice connector (PCT-SPL-42)
+2
+82
+Field wiring joints
+Dupont jumper wires, female to female, 40
+1
+41
+Bench wiring
+CAT6 patch cable
+1
+158
+Gateway uplink
+JST-PH 2.0 mm 4-pin cable set, pack of 2
+10
+890
+Gravity I2C sensor leads
+6 V 100 mA solar panel with 5 V boost and Li-ion charger
+board (134N3P)
+1
+99
+Node power
+Totals: Robu ₹32,251.20 including ₹806.20 shipping; Amazon ₹1,125.00 including shipping and fees.
+3.2 Parts to acquire
+Prices are rough market estimates. Check before ordering.
+PART
+QTY
+EST. ₹
+PRIORITY
+WHY
+CM4 carrier board with 40-pin header and RTC (for
+example Waveshare CM4-IO-BASE or the official CM4 IO
+Board)
+1
+2,000 to
+5,000
+P0 ,
+blocker
+The CM4 cannot boot or host the HAT
+without one. Skip if a lab can lend one.
+5 V 3 A power supply for the carrier
+1
+400 to
+600
+P0
+Gateway power
+18650 Li-ion cell (2,600 mAh or more) with holder and
+JST-PH 2.0 lead
+2
+300 to
+600
+P0
+Node battery and a spare
+50 kg half-bridge load cells with combinator board
+4 +
+1
+300 to
+500
+P0
+Weighing platform
+Capacitive soil moisture sensor (v1.2 or v2.0, 3.3 V
+compatible)
+2
+150 to
+300
+P0
+Bed moisture, plus a spare
+
+=== PAGE 16 ===
+16 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+PART
+QTY
+EST. ₹
+PRIORITY
+WHY
+40 mm 5 V DC fan
+1
+100 to
+150
+P0
+Headspace flush
+Logic-level N-MOSFET modules, or AO3400 or IRLZ44N
+with flyback diodes
+3
+100 to
+200
+P0
+Switch fan, pump and 5 V loads
+IP65 ABS junction boxes, about 150 x 110 x 70 mm and
+100 x 68 x 50 mm
+2
+300 to
+500
+P0
+Node box and lid pod
+Breathable ePTFE vent (adhesive patch or M12 vent
+plug)
+2
+100 to
+300
+P0
+Keeps liquid water off the pod sensors
+PG7 cable glands (extra)
+8
+80
+P0
+Four are not enough (section 3.6)
+4.7 kΩ resistors, perfboard, heat-shrink, silicone sealant,
+desiccant, cable ties
+1
+lot
+150 to
+250
+P0
+1-Wire pull-up and assembly
+Buzzer and LED for the gateway
+1
+30
+P0
+Local alert
+DS3231 RTC module, only if the carrier has no RTC
+1
+150
+P1
+Offline timekeeping
+Mini water pump or solenoid, tubing, misting nozzle,
+separate supply
+1
+set
+300 to
+700
+P1
+Automatic misting
+Spare BME688
+1
+1,000
+P1
+Harsh environment
+Opaque compost bins, 40 to 60 L, with drainage holes
+and tray
+2
+500 to
+800
+P0
+One monitored bin, one hand-checked
+reference bin
+Compost worms (Eisenia fetida), about 0.5 kg per bin
+1 kg
+varies
+P0
+Source from a local KVK or compost unit
+Shade net, dry bedding (leaves, shredded cardboard),
+aged cow dung
+1
+lot
+low
+P0
+Bed preparation
+Estimated total: ₹6,000 to 11,000, depending mostly on whether a carrier board can be borrowed.
+3.3 Node electrical design
+3.3.1 POWER AND SWITCHING
+ 6 V panel --> 134N3P charger --> 1S Li-ion cell --> Base PHR-2 input --> LDO 3.3 V --> RAK4631
+                  |                                         |
+                  |                                         +--> 3V3_S (WB_IO2) --> I2C sensors,
+                  |                                                                 DS18B20, moisture
+                  +--> 5 V boost --+--> MOSFET (WB_IO4) --> 40 mm fan
+                                   +--> load switch (WB_IO6) --> Weight I2C unit  [VERIFY supply]
+The base board's own charger stays idle because nothing is connected to its solar or USB input.
+The 134N3P board charges the cell from the panel.
+The base board's solar connector expects a 5 V panel. Do not connect the 6 V panel to it directly.
+3.3.2 I2C BUS
+DEVICE
+ADDRESS
+SUPPLY
+NOTES
+SCD41 (DFRobot
+Gravity)
+0x62
+3.3 to 5 V
+Lid pod
+BME688
+0x76 or 0x77
+3.3 V
+Lid pod; VERIFY the breakout's address setting
+LIS3DH
+0x18 (0x19
+alternative)
+3 to 5 V
+Lid pod; INT1 to WB_IO3
+
+=== PAGE 17 ===
+17 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+DEVICE
+ADDRESS
+SUPPLY
+NOTES
+TMP117
+0x48
+1.8 to 5.5 V
+Ambient, in a shaded ventilated spot
+M5Stack Weight
+I2C Unit
+0x26
+5 V through its HY2.0-4P
+port, VERIFY
+Rated 0 to 40°C. VERIFY its I2C pull-ups go to 3.3 V, not 5 V,
+before connecting to the nRF52840
+Run the bus at 100 kHz and keep total cable length under about 1 m. Each breakout adds its own pull-
+ups. If the combined pull-up resistance falls below about 1.5 kΩ, remove some.
+3.3.3 PIN MAP
+Logical WisBlock names. Not every WB pin is broken out on every base board. VERIFY against the
+base board pinout; a WisBlock IO adapter module exposes the rest if needed.
+SIGNAL
+WISBLOCK PIN
+NOTES
+I2C SDA, SCL
+I2C1
+All I2C devices
+Sensor power
+3V3_S, enabled by
+WB_IO2
+High = on; off during sleep
+1-Wire bus (5 x DS18B20)
+WB_IO1
+4.7 kΩ pull-up to 3V3_S; powered (3-wire) mode, not parasite mode
+LIS3DH INT1
+WB_IO3
+Wake on lid tilt
+Fan MOSFET gate
+WB_IO4
+100 Ω series resistor, 100 kΩ pull-down
+Pump MOSFET gate (P1)
+WB_IO5
+Same as fan; flyback diode across the pump
+5 V load switch (weight
+unit)
+WB_IO6
+Power-gates the weight unit
+Moisture sensor
+WB_A1
+Analog input
+Battery voltage
+WB_A0
+On-board divider used by RAK4631 examples; VERIFY for this base
+board
+3.3.4 WIRING RULES
+Attach the antenna before powering the node. Transmitting without an antenna can damage the
+SX1262.
+The pigtail is RP-SMA female, so the antenna must be RP-SMA male. A standard SMA antenna will
+not connect properly. VERIFY the antenna's connector.
+Check battery polarity against the base board's markings before plugging in. JST-PH battery leads
+from different vendors are wired both ways.
+Fit a flyback diode across every motor, pump or solenoid.
+Tie the 5 V boost ground to the base board ground.
+3.4 Sensor placement
+Depths assume a bed about 30 cm deep. Scale them for other bins.
+
+=== PAGE 18 ===
+18 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+      lid   [ pod: SCD41 . BME688 . LIS3DH ]   [ 40 mm fan -> vent ]
+    +-----------------------------------------------------------------+
+    |                     headspace, about 8 to 10 cm                 |  inlet holes
+    |  ....................... fresh feed layer ................ P5   |  with mesh
+    |      P1 (5 cm, centre)                                          |
+    |  P4 (15 cm, 3 cm from      P2 (15 cm, centre)     M (15 cm)      |
+    |      sun-facing wall)                                           |
+    |                            P3 (25 cm, centre)                   |
+    +-----------------------------------------------------------------+
+    |                 drainage tray (vermiwash)                        |
+    +=================================================================+
+    |       weighing platform: two boards, four load cells             |
+    +-----------------------------------------------------------------+
+SENSOR
+POSITION
+WHAT IT CATCHES
+P1
+5 cm deep, centre
+Heating of the fresh feed layer
+P2
+15 cm deep, centre
+Main worm zone
+P3
+25 cm deep, centre
+Heat and waterlogging near the bottom
+P4
+15 cm deep, 3 cm from the sun-facing wall
+Heat through the bin wall
+P5
+In the latest feeding zone (moved at each feeding)
+Heating of newly added material
+M
+Moisture sensor, 15 cm deep
+Bed moisture
+TMP117
+Shaded, ventilated spot about 1 m above ground, away from the bin wall
+Ambient reference
+3.5 Lid pod and respiration hardware
+A small IP65 box fixed under the lid. Its side openings are covered with ePTFE membrane, which
+lets air and gas through but not liquid water.
+The SCD41 and BME688 face the headspace through the membrane. The LIS3DH is fixed rigidly to
+the lid.
+A 40 mm fan in a lid vent pushes headspace air out during the flush phase. Inlet holes (about four
+holes of 6 mm) are covered with fine mesh to keep flies out.
+During measurement the fan is off. The small inlet holes keep leakage low and similar from cycle to
+cycle, so the respiration trend is reliable even though the absolute value is approximate.
+The SCD41 is rated for non-condensing conditions. The membrane and flush reduce condensation.
+The firmware flags the pod if relative humidity stays above 95% for more than 12 hours.
+3.6 Enclosures and cable entries
+A PG7 gland seals one round cable of 3 to 6.5 mm.
+GLAND
+BOX
+CABLE
+G1 to G5
+Node box
+DS18B20 probes, one each
+G6
+Node box
+Lid pod harness (I2C, fan, interrupt)
+G7
+Node box
+Load cell cable
+G8
+Node box
+Moisture sensor
+G9
+Node box
+Solar panel
+G10
+Node box
+Pump control (P1)
+G11
+Lid pod
+Harness from the node box
+
+=== PAGE 19 ===
+19 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+Eleven glands are needed: four owned, eight more ordered (one spare).
+Seal the capacitive moisture sensor's cut board edges and circuitry with epoxy or nail polish, then
+heat-shrink over the electronics.
+Keep the node box outside the bin, on its shaded side, with a desiccant sachet inside.
+Mount the antenna vertically, above the bin rim.
+3.7 Gateway hardware
+CM4 on a carrier board with the heatsink and a 5 V 3 A supply.
+Connect the LoRa HAT by USB through its on-board CP2102 at first (appears as /dev/ttyUSB0 ).
+This works on any Linux machine, which keeps the laptop fallback open. It can move to the 40-pin
+header ( /dev/serial0 ) later.
+The HAT's M0 and M1 jumpers select configuration or transmission mode. Follow the Waveshare
+wiki.
+Ethernet (CAT6) for internet and maintenance. The CM4's WiFi runs as a hotspot for phones.
+Buzzer and LED on GPIO pins for local alerts.
+Timekeeping from the carrier's RTC or a DS3231, corrected by NTP when online.
+Keep the gateway indoors, out of direct sun, and log the processor temperature.
+Power from mains with a power bank or small UPS. Solar power for the gateway is out of scope for
+R0.
+3.8 Power budget
+Energy in. Charge current is limited by the panel to about 100 mA at most. With 4 to 5 useful sun
+hours outside the monsoon, and losses from angle, heat and dust, plan on roughly 250 to 350 mAh on
+a sunny day. Monsoon days deliver much less.
+Energy out (estimates on the battery side; confirm in test T-PWR-01).
+LOAD
+DUTY
+EST. MAH PER DAY
+Node asleep, sensors off (about 0.05 mA)
+Continuous
+1.2
+Sampling (sensors on about 3 s at about 10 mA)
+288 per day
+2.4
+LoRa transmit (about 110 mA for about 0.29 s at SF9)
+288 per day
+2.6
+BME688 gas measurement, ultra-low-power mode
+Every 5 min
+2
+Weight unit, power-gated (about 10 mA for 2 s)
+288 per day
+1.6
+SCD41 measurement phase (about 15 mA for 10 min)
+6 per day
+15
+Fan flush (about 150 mA at 5 V for 2 min, through the boost converter)
+6 per day
+45
+Boost converter idle
+Continuous
+3
+Total
+about 73
+Autonomy. A 2,600 mAh cell with about 2,000 mAh usable gives roughly 25 days without sun at this
+load, well above the 7 days in NFR-01. Hot-mode sampling adds under 10 mAh per day. The pump is
+excluded and needs its own supply.
+Low-battery policy.
+
+=== PAGE 20 ===
+20 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+BATTERY
+BEHAVIOUR
+3.6 V or more
+Normal
+3.4 to 3.6 V
+Respiration cycle every 8 h
+3.3 to 3.4 V
+Sampling every 15 min; respiration and actuators off; low-battery flag set
+Below 3.3 V
+Hourly heartbeat only
+4. Radio link
+4.1 Mode and parameters
+The MVP uses LoRa point-to-point (P2P), not LoRaWAN. There is one gateway, no network server is
+needed, and a single-channel HAT cannot act as a LoRaWAN gateway. LoRaWAN remains an option
+later with a multi-channel gateway.
+PARAMETER
+INITIAL VALUE
+NOTES
+Frequency
+865.0625 MHz
+Within the license-exempt 865 to 867 MHz band; confirm current power limits
+Spreading factor
+SF9
+SF10 to SF12 for longer links
+Bandwidth
+125 kHz
+Coding rate
+4/5
+Preamble
+8 symbols
+Sync word
+0x12 (private)
+Must match the HAT (section 4.2)
+Transmit power
+14 dBm to start
+Raise only if the range test needs it and rules allow
+Periodic payload
+44 bytes
+About 0.29 s on air at SF9 (Appendix A)
+4.2 HAT compatibility (risk R2)
+The Waveshare SX1262 868M LoRa HAT is a UART "wireless serial port" module. It runs its own
+firmware, is configured through M0 and M1 jumpers and register commands, and may add its own
+packet framing. The RAK4631 drives its SX1262 directly. Interoperability is therefore not guaranteed
+and must be proven first.
+Spike test (days 1 to 3)
+1. Configure the HAT, following the Waveshare wiki, for transparent mode on a fixed channel in the
+865 to 867 MHz range, lowest air data rate, and no encryption key.
+2. On the RAK4631, run a RadioLib receiver that sweeps SF7 to SF12, bandwidths 125 and 250 kHz,
+and sync words 0x12 and 0x34, printing every packet received. Transmit repeatedly from the HAT.
+3. Once packets arrive, lock the parameters, test the reverse direction, and document any framing
+bytes the HAT adds.
+4. If no reliable two-way link exists by day 3, switch to a fallback.
+Fallbacks, in order
+F1. A second RAK4631 on a WisBlock Base, connected by USB, as the gateway's radio modem.
+The same radio runs at both ends, so compatibility is guaranteed. About ₹4,600.
+F2. An SPI SX1262 module driven directly from the gateway.
+
+=== PAGE 21 ===
+21 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+The gateway's radio service hides the radio behind one interface, so nothing else in the software
+changes.
+4.3 Uplink payloads
+All multi-byte fields are little-endian.
+Type 0x01, periodic reading (44 bytes)
+OFFSET
+SIZE
+FIELD
+TYPE
+SCALE OR MEANING
+0
+1
+version_type
+uint8
+High nibble protocol version (1); low nibble type (1)
+1
+2
+node_id
+uint16
+3
+2
+seq
+uint16
+Increments every packet
+5
+1
+flags
+uint8
+bit 0 hot mode, 1 low battery, 2 pod humidity high, 3 lid open, 4 misting, 5 buffered
+record
+6
+2
+age_s
+uint16
+Seconds since the sample was taken
+8
+2
+batt_mv
+uint16
+Millivolts
+10
+10
+t_probe[5]
+int16 x
+5
+0.01 °C; 0x8000 means fault
+20
+2
+t_ambient
+int16
+0.01 °C
+22
+2
+rh
+uint16
+0.01 %
+24
+2
+pressure
+uint16
+0.1 hPa
+26
+4
+gas_res
+uint32
+Ohms
+30
+2
+moisture_raw
+uint16
+Millivolts at the ADC
+32
+4
+mass
+int32
+Grams
+36
+2
+co2_last
+uint16
+ppm, last valid reading
+38
+1
+fault_bits
+uint8
+bits 0 to 4 probe faults, 5 I2C fault, 6 weight fault, 7 moisture fault
+39
+1
+rssi_last_ack
+int8
+dBm of the last acknowledgement received
+40
+4
+tag
+bytes
+First 4 bytes of HMAC-SHA256(node key, bytes 0 to 39)
+Type 0x02, respiration result (28 bytes)
+OFFSET
+SIZE
+FIELD
+TYPE
+SCALE OR MEANING
+0
+6
+header
+version_type, node_id, seq, flags as above
+6
+2
+age_s
+uint16
+Seconds since the measurement ended
+8
+2
+slope
+int16
+0.1 ppm per minute
+10
+2
+r2
+uint16
+0.001
+12
+1
+n_points
+uint8
+Points used in the fit
+13
+2
+co2_start
+uint16
+ppm
+15
+2
+co2_end
+uint16
+ppm
+17
+2
+t_bed_mean
+int16
+0.01 °C, mean of the five probes
+19
+4
+mass
+int32
+Grams
+
+=== PAGE 22 ===
+22 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+OFFSET
+SIZE
+FIELD
+TYPE
+SCALE OR MEANING
+23
+1
+resp_flags
+uint8
+bit 0 saturated, 1 low R², 2 aborted by lid opening
+24
+4
+tag
+bytes
+HMAC tag over bytes 0 to 23
+Type 0x03, event (21 bytes)
+OFFSET
+SIZE
+FIELD
+TYPE
+SCALE OR MEANING
+0
+6
+header
+As above
+6
+2
+age_s
+uint16
+Seconds since the event
+8
+1
+event_code
+uint8
+1 lid open, 2 lid closed with mass change, 5 unexplained mass change, 6 mist start, 7 mist
+stop, 8 failsafe triggered, 9 reboot
+9
+4
+mass_before
+int32
+Grams
+13
+4
+mass_after
+int32
+Grams
+17
+4
+tag
+bytes
+HMAC tag over bytes 0 to 16
+Type 0x08, downlink acknowledgement and command (19 bytes)
+OFFSET
+SIZE
+FIELD
+TYPE
+SCALE OR MEANING
+0
+1
+version_type
+uint8
+Type 8
+1
+2
+node_id
+uint16
+3
+2
+ack_seq
+uint16
+Sequence number being acknowledged
+5
+4
+epoch
+uint32
+Gateway UTC time, seconds
+9
+1
+cmd
+uint8
+0 none, 1 mist, 2 start respiration cycle, 3 set configuration value, 4 reboot
+10
+2
+arg
+uint16
+For mist: seconds
+12
+1
+cfg_key
+uint8
+Configuration parameter ID
+13
+2
+cfg_value
+int16
+New value
+15
+4
+tag
+bytes
+HMAC tag over bytes 0 to 14
+4.4 Security
+Each node has a 32-byte HMAC key, set at flashing and stored in the gateway configuration. Keys
+are never committed to the repository.
+The 4-byte tag stops casual spoofing and corruption. Payloads are not encrypted because the data
+is not sensitive.
+Replay protection: the gateway rejects a sequence number already seen for that node within a
+window of 256. The node saves its sequence number to flash every 50 packets and adds 50 on
+boot, so it never repeats after a reset.
+Downlink commands carry a tag too, so a node ignores commands not signed with its key.
+4.5 Reliability
+The gateway acknowledges every uplink. The node retries up to 2 times with a random 1 to 3 s
+delay, then stores the record (P1).
+Store-and-forward (P1): a ring buffer of 2,000 records, about 7 days at 5-minute sampling, in
+internal flash. After a successful acknowledgement the node sends up to 5 buffered records per
+
+=== PAGE 23 ===
+23 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+wake.
+The gateway logs signal strength per packet, and the health view warns when a node's link margin
+is low.
+5. Node firmware
+5.1 Toolchain and libraries
+ITEM
+CHOICE
+Build
+PlatformIO with the RAKwireless nRF52 platform, Arduino framework
+Radio
+RadioLib, or the SX126x-Arduino library, in P2P mode
+DS18B20
+OneWire and DallasTemperature
+TMP117
+SparkFun TMP117 library
+BME688
+Bosch BSEC2 in ultra-low-power mode, or the BME68x driver
+SCD41
+Sensirion I2C SCD4x library
+LIS3DH
+Adafruit LIS3DH library
+Weight unit
+M5Stack Weight I2C library or direct register access
+Signing
+Small software HMAC-SHA256 implementation
+Storage
+LittleFS on internal flash: configuration, sequence number, buffer
+5.2 States
+STATE
+ENTERED ON
+WORK
+NEXT
+BOOT
+Power-on or watchdog reset
+Load configuration and sequence number; sensor self-
+test; send reboot event
+SLEEP
+SLEEP
+End of any task
+Radio asleep; 3V3_S off; timer and LIS3DH interrupt
+armed
+Timer or
+interrupt
+SAMPLE
+Sample timer
+3V3_S on; read all sensors (median of 3 for moisture and
+mass); 3V3_S off
+EVALUATE
+EVALUATE
+After SAMPLE
+Edge failsafe rules (5.4); hot mode check; low-battery
+policy
+TX
+TX
+Packet ready
+Transmit, then listen 2 s for acknowledgement
+APPLY, or retry
+APPLY
+Command received
+Set time; run command; update configuration
+SLEEP
+RESP_FLUSH
+Respiration timer
+Fan on for 120 s
+RESP_MEASURE
+RESP_MEASURE
+Flush done
+Fan off; SCD41 in periodic mode for 600 s; fit slope
+TX (type 0x02)
+LID_OPEN
+LIS3DH interrupt, lid tilted more
+than 30°
+Record mass before (median of last 3 readings); abort any
+respiration run
+LID_CLOSED
+LID_CLOSED
+Lid back within 5° of its closed
+position for 5 s
+Wait 30 s to settle; read mass after (median of 5)
+TX (type 0x03)
+MIST (P1)
+Failsafe rule or command
+Pump on for the set time; start lockout timer
+SLEEP
+
+=== PAGE 24 ===
+24 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+5.3 Schedules
+TASK
+DEFAULT
+ALLOWED RANGE
+Sampling
+300 s
+60 to 1,800 s
+Hot mode sampling (any probe at 30°C or more)
+60 s
+30 to 300 s
+Respiration cycle
+Every 4 h
+1 to 12 h
+Flush
+120 s
+30 to 300 s
+Measure
+600 s
+180 to 900 s
+BME688 gas reading
+Every 300 s
+Fixed by BSEC mode
+Heartbeat at critical battery
+3,600 s
+Fixed
+5.4 Edge failsafe rules
+These run on the node whether or not the gateway is reachable. Values are initial and set by
+configuration.
+RULE
+CONDITION
+ACTION
+EF-1 Heat, bed not
+wet
+Any probe at 33°C or more, and moisture below 75%
+Mist 20 s (P1); lockout 30 min; event 8
+EF-2 Heat, bed wet
+Any probe at 33°C or more, and moisture 75% or
+more
+Hot mode and flag only; misting a wet bed makes it
+worse
+EF-3 Dry
+Moisture below 55% for 2 samples in a row
+Mist 15 s (P1); lockout 60 min
+EF-4 Pump safety
+More than 3 min of misting in 1 h
+Disable the pump until the gateway re-enables it
+5.5 Robustness
+Hardware watchdog at 30 s.
+Every sensor read has a timeout. A failing sensor sets its fault bit and never blocks the loop.
+A DS18B20 reading of 85.00°C right after power-up, or -127°C (disconnected), is treated as a
+fault.
+Configuration and sequence number persist across resets.
+Firmware updates over Bluetooth without opening the box (P2).
+6. Gateway software
+6.1 Stack
+LAYER
+CHOICE
+Operating system
+Raspberry Pi OS Lite, 64-bit, on eMMC
+Language
+Python 3.11
+Messaging
+Mosquitto MQTT, bound to localhost
+Storage
+SQLite in WAL mode
+API
+FastAPI with Uvicorn; WebSocket for live updates
+
+=== PAGE 25 ===
+25 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+LAYER
+CHOICE
+Analysis
+NumPy and SciPy
+Dashboard
+Installable web app (PWA), uPlot charts, translation files for Gujarati, Hindi and English
+GPIO
+gpiozero for buzzer and LED
+Outbound alerts
+Telegram Bot API over HTTPS when online
+Processes
+systemd services, journald logs
+Networking
+NetworkManager hotspot on wlan0; Ethernet uplink on eth0; mDNS name vermikendra.local
+6.2 Services
+SERVICE
+RESPONSIBILITY
+vk-radio
+Owns the LoRa radio; checks tags and sequence numbers; decodes; publishes to vk/{site}/{node}/up ; sends
+acknowledgements and queued commands from vk/{site}/{node}/down
+vk-ingest
+Stores readings, events and respiration runs
+vk-engine
+Calibration, event classification, heat forecast, readiness, alert rules; publishes to vk/{site}/alerts
+vk-api
+REST and WebSocket API; serves the dashboard
+vk-notify
+Buzzer, LED, and a Telegram outbox with retry
+vk-replay
+Replays a recorded dataset into MQTT at 1x to 600x speed (FR-12)
+vk-sync
+(P2)
+Sends queued records to a cloud endpoint when online
+6.3 Decoded message
+Example of a decoded reading as published to MQTT. Values are illustrative.
+{
+  "site": "rru-campus",
+  "node": 1,
+  "bin": "bin-01",
+  "type": "reading",
+  "seq": 4182,
+  "ts": "2026-10-03T14:05:12+05:30",
+  "battery_mv": 3912,
+  "probes_c": [27.41, 29.86, 26.10, 31.02, 33.40],
+  "ambient_c": 34.18,
+  "rh_pct": 91.2,
+  "pressure_hpa": 1006.4,
+  "gas_ohm": 48210,
+  "moisture_pct": 71.5,
+  "mass_kg": 42.816,
+  "co2_ppm": 1840,
+  "flags": ["hot_mode"],
+  "faults": [],
+  "rssi_dbm": -97,
+  "snr_db": 6.5
+}
+6.4 Data model
+TABLE
+KEY COLUMNS
+sites
+id, name, village, district, latitude, longitude
+
+=== PAGE 26 ===
+26 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+TABLE
+KEY COLUMNS
+bins
+id, site_id, name, volume_l, bed_depth_cm, headspace_l, tare_kg, status
+nodes
+id, bin_id, key_id, firmware_version, last_seen, battery_mv
+calibrations
+node_id, sensor, parameters (JSON), valid_from
+readings
+node_id, ts, seq, probe_1 to probe_5, ambient, rh, pressure, gas_ohm, moisture_raw, moisture_pct, mass_g,
+co2_ppm, battery_mv, rssi, snr, flags, faults
+respiration_runs
+id, bin_id, ts_start, slope_ppm_min, r2, n_points, index_value, bed_temp_c, valid
+events
+id, bin_id, ts, type, mass_before_g, mass_after_g, delta_g, source (auto or manual), note
+alerts
+id, bin_id, ts_open, ts_clear, rule_id, severity, value, message_key, ack_user, ack_ts
+batches
+id, bin_id, ts_start, ts_harvest, input_g, output_g, readiness_history (JSON)
+users
+id, name, role (operator, supervisor, admin), phone, language, pin_hash
+commands
+id, node_id, ts, type, argument, status
+Retention: full-resolution readings for 90 days, then 1-hour averages. One bin produces roughly 60 KB
+of readings per day, so storage is not a constraint on 32 GB.
+6.5 REST API (version 1)
+METHOD
+PATH
+PURPOSE
+GET
+/api/v1/bins
+All bins with status, top alert and readiness
+GET
+/api/v1/bins/{id}
+One bin with its latest reading
+GET
+/api/v1/bins/{id}/readings?from=&to=&step=
+Time series, downsampled to the requested step
+GET
+/api/v1/bins/{id}/respiration?from=&to=
+Respiration runs
+GET
+/api/v1/bins/{id}/events
+Events
+POST
+/api/v1/bins/{id}/events
+Manual event (FR-14)
+GET
+/api/v1/bins/{id}/readiness
+Status, conditions met, days-to-ready estimate (P1)
+GET
+/api/v1/alerts?state=open
+Open alerts
+POST
+/api/v1/alerts/{id}/ack
+Acknowledge an alert (PIN)
+POST
+/api/v1/nodes/{id}/commands
+Mist, start respiration cycle, reboot (PIN)
+GET, PUT
+/api/v1/bins/{id}/config
+Thresholds and schedules (PIN for changes)
+GET
+/api/v1/impact?from=&to=
+Waste in, compost out, batches
+GET
+/api/v1/export.csv?bin=&from=&to=
+CSV export (FR-10)
+GET
+/api/v1/health
+Gateway and node health (FR-13)
+WS
+/ws/live
+Readings, alerts and events as they arrive
+6.6 Dashboard
+SCREEN
+CONTENT
+Overview
+One card per bin: status (colour, icon and word), last update, top alert, readiness; site-wide banner for critical alerts
+
+=== PAGE 27 ===
+27 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+SCREEN
+CONTENT
+Bin
+detail
+Status and the one action to take; probe temperatures drawn at their depths; charts for temperature, moisture, respiration
+and mass; event timeline
+Alerts
+Open and recent alerts with actions; acknowledge
+Records
+Batches, inputs, outputs, totals; CSV export
+Health
+Battery, signal, last seen, sensor faults; gateway disk and temperature
+Settings
+Language, bins, thresholds, users, Telegram (PIN protected)
+Status words are fixed and translated: Good, Needs attention, Act now, Offline.
+Action text is stored as translation keys, for example action.heat.shade and action.dry.water .
+Must work on a 5-inch Android phone in Chrome, load within 3 s over the hotspot, and keep the
+last data viewable when the phone is out of range.
+6.7 Networking
+Hotspot name Vermikendra-{site} , WPA2. The gateway is at 10.42.0.1 (NetworkManager's
+shared-mode default), so the dashboard is at http://10.42.0.1 or http://vermikendra.local.
+The Ethernet uplink is optional. Services listen only on the hotspot and localhost; no inbound ports
+are opened to the internet.
+Remote maintenance (P2) uses an outbound tunnel only.
+6.8 Time
+The gateway timestamps each record as its receive time minus age_s . Gateway time comes from the
+RTC and is corrected by NTP when online. Acknowledgements carry the gateway time so nodes can
+stamp buffered records.
+7. Algorithms
+All thresholds are initial values, stored in configuration, and will be tuned with pilot data.
+7.1 Thresholds
+PARAMETER
+GOOD
+WARNING
+CRITICAL
+Bed temperature, any probe
+12 to 30°C
+30 to 33°C, or 5 to
+12°C
+33°C or more, or below
+5°C
+Moisture content
+60 to 80%
+55 to 60%, or 80 to
+85%
+Below 55%, or above
+85%
+Foul air ratio (gas resistance divided by its 24 h median) while RH is
+above 90%
+0.8 or more
+0.6 to 0.8
+Below 0.6 for 1 h
+Battery
+3.6 V or
+more
+3.4 to 3.6 V
+Below 3.4 V
+Time since last packet
+Under 15
+min
+15 to 30 min
+Over 30 min
+Worm losses become likely around 35°C, so the critical line sits at 33°C to leave time to act.
+
+=== PAGE 28 ===
+28 / 34
+Vermikendra | PRD and TRD | Rev 0.1 | 14 Sep 2026
+7.2 Probe calibration
+Each probe i gets an offset from the three-point water bath in section 8.1. If residuals exceed 0.2°C, a
+gain is fitted as well.
+T_cal[i] = gain[i] * T_raw[i] + offset[i]
+7.3 Heat-risk forecast
+For each probe, fit a least-squares line to the last 30 minutes of readings (at least 5 points), giving the
+current temperature T and slope s in °C per hour.
+if T >= T_crit:                     critical (HEAT_NOW)
+elif s > 0.3:
+    t_cross = (T_crit - T) / s      # hours until the probe reaches T_crit
+    if t_cross <= 2:                critical (HEAT_FORECAST)
+    elif t_cross <= 6:              warning  (HEAT_FORECAST)
+The alert clears when T is at least 1.5°C below T_crit and s is 0 or less for 30 minutes.
+7.4 Moisture
+1. Two-point calibration per sensor in the real bedding: raw_dry (air-dried bedding) and raw_wet
+(saturated, drained for 10 minutes). Capacitive sensor output falls as moisture rises.
+2. Wetness index: w = (raw_dry - raw) / (raw_dry - raw_wet) , from 0 (dry) to 1 (saturated).
+3. Map w to gravimetric moisture content with a linear fit from 4 to 6 bedding samples, each weighed
+wet, dried to constant weight, and weighed again. Moisture content (wet basis) = (wet mass - dry
+mass) / wet mass x 100.
+The thresholds in 7.1 refer to this moisture content.
+7.5 Respiration rate
+For each cycle, using SCD41 readings every 5 s during the measure phase:
+1. Discard the first 60 s, while air settles after the fan stops, and any reading of 4,800 ppm or more.
+2. Fit a straight line C(t) = a + s * t to the remaining points (up to 480 s). The slope s is in ppm
+per minute.
+3. The run is valid if it has at least 20 points and R² of at least 0.90. Otherwise it is flagged low quality.
+4. Convert to a mass-normalised index, in mg of CO2-carbon per kg of bed per hour:
+n_air   = P * (V_head / 1000) / (8.314 * T_K)          # mol of air in headspace
+R_index = s * 1e-6 * n_air * 12.01 * 1000 * 60 / m_bed
+  P       headspace pressure, Pa (from BME688)
+  V_head  headspace volume, litres (entered at setup, updated at harvest)
+  T_K     headspace temperature, kelvin
+  m_bed   bed mass, kg = platform mass - bin tare
+5. Optional normalisation to 25°C, assuming respiration doubles every 10°C: R_25 = R_index * 2
+** ((25 - T_bed) / 10) .
+Because of leakage the index is lower than the true rate. It is used only as a trend within the same bin.
+
