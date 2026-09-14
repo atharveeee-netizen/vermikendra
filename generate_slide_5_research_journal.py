@@ -6,105 +6,134 @@ canvas = Image.new('RGB', (W, H), '#ffffff')
 draw = ImageDraw.Draw(canvas)
 
 # Fonts
-f_title = ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 40)
-f_sub = ImageFont.truetype('C:/Windows/Fonts/segoeui.ttf', 18)
-f_panel_hdr = ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 16)
-f_caption_b = ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 12.5)
-f_caption = ImageFont.truetype('C:/Windows/Fonts/segoeui.ttf', 12.5)
-f_footer = ImageFont.truetype('C:/Windows/Fonts/segoeui.ttf', 13)
-f_footer_b = ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 13)
+f_title = ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 44)
+f_sub = ImageFont.truetype('C:/Windows/Fonts/segoeui.ttf', 20)
+f_name = ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 26)
+f_role = ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 16)
+f_desc = ImageFont.truetype('C:/Windows/Fonts/segoeui.ttf', 15)
+f_sec_hdr = ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 22)
+f_gantt_task = ImageFont.truetype('C:/Windows/Fonts/segoeui.ttf', 14)
+f_sm_b = ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 13)
 
 # ----------------- 1. HEADER -----------------
-# Vermikendra Logo Badge
-draw.rounded_rectangle([(50, 18), (270, 72)], radius=26, fill='#fed7aa', outline='#ea580c', width=2)
-draw.text((160, 45), 'Vermikendra', font=ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 22), fill='#9a3412', anchor='mm')
+draw.rounded_rectangle([(60, 22), (280, 75)], radius=26, fill='#fed7aa', outline='#ea580c', width=2)
+draw.text((170, 48), 'Vermikendra', font=ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 22), fill='#9a3412', anchor='mm')
 
-# Center Titles
-draw.text((W/2, 34), 'Team Vermikendra & Multi-Disciplinary Engineering Leadership', font=f_title, fill='#0f172a', anchor='mm')
-draw.text((W/2, 68), 'Rashtriya Raksha University (RRU), Gujarat  |  Team ID: HSC|GJ|00009  |  Hardware-Firmware-Cloud Co-Design & Deployment Roadmap', font=f_sub, fill='#475569', anchor='mm')
+draw.text((W/2, 40), 'Team Composition & Engineering Leadership', font=f_title, fill='#0f172a', anchor='mm')
+draw.text((W/2, 80), 'Multi-Disciplinary Expertise Mapping & Systems Engineering Execution Roadmap', font=f_sub, fill='#475569', anchor='mm')
 
-# Right Badge
-draw.rounded_rectangle([(W - 320, 18), (W - 50, 72)], radius=10, fill='#ffffff', outline='#cbd5e1', width=2)
-draw.text((W - 185, 34), 'YOUTH TECH CHALLENGE', font=ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 11), fill='#ea580c', anchor='mm')
-draw.text((W - 185, 54), 'HACKATHON 2027', font=ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 14.5), fill='#0f172a', anchor='mm')
+draw.rounded_rectangle([(W-340, 22), (W-60, 75)], radius=12, fill='#ffffff', outline='#cbd5e1', width=2)
+draw.text((W-200, 37), 'Hack for', font=ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 17), fill='#16a34a', anchor='mm')
+draw.text((W-200, 58), 'Social Cause 2027', font=ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf', 17), fill='#0f172a', anchor='mm')
 
-# Separator line
-draw.line([(50, 84), (W - 50, 84)], fill='#cbd5e1', width=2)
+draw.line([(60, 95), (W-60, 95)], fill='#cbd5e1', width=2)
 
+# ----------------- 2. ENGINEERING RESPONSIBILITY MAP (TEAM) -----------------
+draw.text((60, 130), 'Core Engineering Competencies', font=f_sec_hdr, fill='#0f172a')
 
-# ----------------- 2. ROW 1: MASTER FIGURE 1 (y: 92 to 748, h=656) -----------------
-# Load research-grade Figure 1
-im_f1 = Image.open('scratch/academic_slide5/fig1_team_system_ownership_master.png')
-# Target dimensions: w = 2460, h = 656
-im_f1_res = im_f1.resize((2460, 656), Image.Resampling.LANCZOS)
-canvas.paste(im_f1_res, (50, 92))
+team = [
+    {
+        "name": "Atharve",
+        "role": "Lead Hardware & RF Engineer",
+        "color": "#ea580c",
+        "bg": "#fff7ed",
+        "contrib": [
+            "• Architected custom IoT sensor array (DS18B20/SCD41).",
+            "• Engineered 18µA deep-sleep power budget & solar MPPT.",
+            "• Designed IP65 enclosure & active thermal management.",
+            "• Optimized LoRa radio link margin for rural deployment."
+        ]
+    },
+    {
+        "name": "Akshit",
+        "role": "Edge Firmware & Machine Learning",
+        "color": "#0284c7",
+        "bg": "#f0f9ff",
+        "contrib": [
+            "• Developed offline finite state machine for autonomous control.",
+            "• Implemented edge-predictive thermal runaway algorithm.",
+            "• Wrote C/C++ driver code for sensor DMA polling.",
+            "• Built automated self-calibration for NDIR CO2 sensors."
+        ]
+    },
+    {
+        "name": "Charvi",
+        "role": "Cloud Architect & Full-Stack",
+        "color": "#16a34a",
+        "bg": "#f0fdf4",
+        "contrib": [
+            "• Deployed AWS/GCP telemetry ingestion pipeline & DB.",
+            "• Designed interactive React/Node.js operator dashboard.",
+            "• Built automated SMS alerting system for SHG workers.",
+            "• Executed empirical kinetics data analysis and visualization."
+        ]
+    }
+]
 
+box_w = 750
+box_gap = 45
+box_h = 320
+y_team = 180
+start_x = (W - (3*box_w + 2*box_gap)) // 2
 
-# ----------------- 3. ROW 2: PANELS FOR FIGURE 2 & FIGURE 3 (y: 758 to 1380, h=622) -----------------
-def draw_panel_box(box, title):
-    draw.rounded_rectangle(box, radius=10, fill='#ffffff', outline='#94a3b8', width=2)
-    h_box = [(box[0][0], box[0][1]), (box[1][0], box[0][1] + 34)]
-    draw.rounded_rectangle(h_box, radius=10, fill='#f8fafc', outline='#cbd5e1', width=1)
-    draw.text((box[0][0] + 16, box[0][1] + 17), title, font=f_panel_hdr, fill='#0f172a', anchor='lm')
+for i, t in enumerate(team):
+    bx = start_x + i * (box_w + box_gap)
+    draw.rounded_rectangle([(bx, y_team), (bx+box_w, y_team+box_h)], radius=16, fill='#ffffff', outline='#cbd5e1', width=2)
+    draw.rounded_rectangle([(bx, y_team), (bx+box_w, y_team+70)], radius=16, fill=t['bg'], outline=t['color'], width=2)
+    # square off bottom of header
+    draw.rectangle([(bx, y_team+40), (bx+box_w, y_team+70)], fill=t['bg'])
+    
+    draw.text((bx+30, y_team+25), t['name'], font=f_name, fill='#0f172a')
+    draw.text((bx+30, y_team+75), 'ROLE: ' + t['role'], font=f_role, fill=t['color'])
+    
+    cy = y_team + 130
+    for line in t['contrib']:
+        draw.text((bx+30, cy), line, font=f_desc, fill='#334155')
+        cy += 40
 
-# PANEL LEFT: FIGURE 2 (Width: 1215 px)
-b2 = [(50, 758), (1275, 1380)]
-draw_panel_box(b2, 'Figure 2. Empirical Engineering Trade-Offs & Multi-Objective Pareto Optimization')
+# ----------------- 3. ENGINEERING ROADMAP (GANTT) -----------------
+draw.text((60, 560), 'Execution Timeline & Deployment Roadmap', font=f_sec_hdr, fill='#0f172a')
 
-# Paste Figure 2 plots
-im_f2 = Image.open('scratch/academic_slide5/fig2_engineering_tradeoffs.png')
-w_f2 = 1205
-h_f2 = int(im_f2.height * (w_f2 / im_f2.width))
-if h_f2 > 455:
-    h_f2 = 455
-    w_f2 = int(im_f2.width * (h_f2 / im_f2.height))
-im_f2_res = im_f2.resize((w_f2, h_f2), Image.Resampling.LANCZOS)
-f2_x = 50 + (1225 - w_f2) // 2
-canvas.paste(im_f2_res, (f2_x, 802))
+# We will draw a clean Gantt chart
+gantt_y = 610
+gantt_h = 680
+draw.rounded_rectangle([(60, gantt_y), (W-60, gantt_y+gantt_h)], radius=12, fill='#ffffff', outline='#cbd5e1', width=2)
 
-# Fig 2 Explanatory Scientific Captions
-c2_y = 802 + h_f2 + 12
-draw.text((68, c2_y), '[2A. Power Autonomy Pareto Frontier]:', font=f_caption_b, fill='#0284c7')
-draw.text((345, c2_y), '18 uA deep sleep duty-cycling achieves 583.2 days autonomy; provides >7d zero-sunlight monsoon reserve.', font=f_caption, fill='#334155')
+# Months header
+months = ["M1: Lab Synth", "M2: Prototype", "M3: Bio-Stress", "M4: Hackathon", "M5: Pilot 20-Bin", "M6: Scale-Up"]
+col_w = (W - 120 - 350) // 6
 
-draw.text((68, c2_y + 24), '[2B. Rural Canopy LoRa Link Margin]:', font=f_caption_b, fill='#15803d')
-draw.text((345, c2_y + 24), 'Spreading Factor SF9 sustains >= 95% Packet Delivery Rate up to 2.2 km through dense sugarcane/wheat biomass.', font=f_caption, fill='#334155')
+draw.rectangle([(60, gantt_y), (W-60, gantt_y+50)], fill='#f8fafc')
+for i, m in enumerate(months):
+    mx = 60 + 350 + i * col_w
+    draw.text((mx + col_w/2, gantt_y + 25), m, font=f_role, fill='#475569', anchor='mm')
+    # Vertical grid lines
+    draw.line([(mx, gantt_y+50), (mx, gantt_y+gantt_h)], fill='#e2e8f0', width=1)
 
-draw.text((68, c2_y + 48), '[2C. Respiration Purge Signal-to-Noise]:', font=f_caption_b, fill='#1e40af')
-draw.text((345, c2_y + 48), '40mm active fan flush purges ambient drift; subsequent linear CO2 accumulation yields R2 = 0.982 respiration fidelity.', font=f_caption, fill='#334155')
+tasks = [
+    ("Phase 1: Sensor Eval & Hardware Design", 0, 1.5, "#ea580c"),
+    ("Phase 2: Edge Firmware State Machine", 0.5, 2.5, "#0284c7"),
+    ("Phase 3: Telemetry Cloud Pipeline Integration", 1.5, 3.0, "#16a34a"),
+    ("Phase 4: Live Biomass Thermal Stress Test", 2.0, 3.5, "#dc2626"),
+    ("Phase 5: National Tech Demonstration", 3.0, 4.0, "#7c3aed"),
+    ("Phase 6: Cluster Rollout (20-Bin SHG Pilot)", 4.0, 5.5, "#d97706"),
+    ("Phase 7: Long-Term Kinetics Evaluation", 4.5, 6.0, "#059669")
+]
 
-
-# PANEL RIGHT: FIGURE 3 (Width: 1225 px)
-b3 = [(1285, 758), (W - 50, 1380)]
-draw_panel_box(b3, 'Figure 3. Multi-Disciplinary Systems Engineering Roadmap, TRL Progression & Milestones')
-
-# Paste Figure 3 Gantt
-im_f3 = Image.open('scratch/academic_slide5/fig3_engineering_roadmap_gantt.png')
-w_f3 = 1205
-h_f3 = int(im_f3.height * (w_f3 / im_f3.width))
-if h_f3 > 455:
-    h_f3 = 455
-    w_f3 = int(im_f3.width * (h_f3 / im_f3.height))
-im_f3_res = im_f3.resize((w_f3, h_f3), Image.Resampling.LANCZOS)
-f3_x = 1285 + (1225 - w_f3) // 2
-canvas.paste(im_f3_res, (f3_x, 802))
-
-# Fig 3 Explanatory Scientific Captions
-c3_y = 802 + h_f3 + 12
-draw.text((1303, c3_y), '[Phase 1-2 Co-Design & Lab Synthesis]:', font=f_caption_b, fill='#ea580c')
-draw.text((1585, c3_y), '12 Gujarat agro-surveys -> ECE hardware prototyping (18 uA sleep) -> CSE gateway daemons (<45ms).', font=f_caption, fill='#334155')
-
-draw.text((1303, c3_y + 24), '[Phase 3 Live Pilot & Bio-Stress Test]:', font=f_caption_b, fill='#15803d')
-draw.text((1585, c3_y + 24), 'Instrumented live Eisenia fetida bed; validated autonomous misting failsafe at 33 C core thermal spike.', font=f_caption, fill='#334155')
-
-draw.text((1303, c3_y + 48), '[Phase 4-5 National Scaling Vision]:', font=f_caption_b, fill='#7c3aed')
-draw.text((1585, c3_y + 48), 'Live hardware demonstration at HSC Finals -> 20-bin village cluster rollout with KVK & DAY-NRLM SHGs.', font=f_caption, fill='#334155')
-
+ty = gantt_y + 80
+for task, start, end, color in tasks:
+    # Task Name
+    draw.text((80, ty+10), task, font=f_gantt_task, fill='#0f172a')
+    # Task Bar
+    bar_x1 = 60 + 350 + int(start * col_w)
+    bar_x2 = 60 + 350 + int(end * col_w)
+    draw.rounded_rectangle([(bar_x1, ty), (bar_x2, ty+35)], radius=17, fill=color)
+    ty += 80
 
 # ----------------- 4. FOOTER -----------------
-draw.text((W/2, 1398), 'Peer-Reviewed Systems Engineering Leadership  |  Rashtriya Raksha University, Gujarat  |  School of Applied Sciences, Technology & National Security', font=f_footer_b, fill='#475569', anchor='mm')
-draw.text((W/2, 1422), '@HSC submission- Template  |  Team ID: HSC|GJ|00009', font=f_footer, fill='#94a3b8', anchor='mm')
+draw.text((W/2, 1380), 'Peer-Reviewed Systems Engineering Leadership | Rashtriya Raksha University, Gujarat | School of Applied Sciences, Technology & National Security', font=f_sm_b, fill='#475569', anchor='mm')
+draw.text((W/2, 1410), '@HSC submission- Template | Team ID: HSC|GJ|00009', font=ImageFont.truetype('C:/Windows/Fonts/segoeui.ttf', 13), fill='#94a3b8', anchor='mm')
 
 out_path = 'slide_5_team_research_journal.jpg'
-canvas.save(out_path, quality=98)
-print('Master Slide 5 generated successfully at:', out_path)
+canvas.save(out_path, quality=95)
+print('Master Academic Research Slide 6 (Team) generated successfully at:', out_path)

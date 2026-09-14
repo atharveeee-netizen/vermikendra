@@ -6,17 +6,14 @@ zip_filename = 'vermikendra_all_generated_images.zip'
 
 # 1. Map official 7 slides
 official_slides = [
-    ('slide_1_cover_complete_1789389305410.jpg', '01_Official_7_Slide_Deck/Slide_1_Cover_Page.jpg'),
-    ('slide_2_image2_style_master.jpg', '01_Official_7_Slide_Deck/Slide_2_Problem_Solution.jpg'),
-    ('slide_3_research_journal_definitive.jpg', '01_Official_7_Slide_Deck/Slide_3_Technical_Approach_Research_Journal.jpg'),
+    ('slide_1_cover_master.jpg', '01_Official_7_Slide_Deck/Slide_1_Cover_Page.jpg'),
+    ('slide_2_pictorial_text_1789389752199.jpg', '01_Official_7_Slide_Deck/Slide_2_Problem_Solution.jpg'),
+    ('slide_3_research_journal_master.jpg', '01_Official_7_Slide_Deck/Slide_3_Technical_Approach_Research_Journal.jpg'),
     ('slide_4_impact_research_journal.jpg', '01_Official_7_Slide_Deck/Slide_4_Impact_Potential_Research_Journal.jpg'),
     ('slide_6_feasibility_risk_master.jpg', '01_Official_7_Slide_Deck/Slide_5_Feasibility_and_Risk_Matrix.jpg'),
     ('slide_5_team_research_journal.jpg', '01_Official_7_Slide_Deck/Slide_6_Team_Leadership_Research_Journal.jpg'),
     ('slide_7_references_master.jpg', '01_Official_7_Slide_Deck/Slide_7_References_and_Standards.jpg'),
 ]
-
-# Also ensure slide_1_cover_master.jpg exists for consistency
-shutil.copyfile('slide_1_cover_complete_1789389305410.jpg', 'slide_1_cover_master.jpg')
 
 # 2. Standalone Graphics
 standalone_graphics = [
@@ -43,9 +40,8 @@ scientific_plots = [
     ('scratch/stakeholder_value_network.png', '03_Scientific_Figures_and_Plots/Slide4_Stakeholder_Value_Network.png'),
     ('scratch/plot_worm_survival.png', '03_Scientific_Figures_and_Plots/Slide4_Eisenia_Fetida_Thermal_Survival_Curve.png'),
     ('scratch/plot_economic_payback.png', '03_Scientific_Figures_and_Plots/Slide4_Cumulative_Economic_Payback_Curve.png'),
-    ('scratch/firmware_power_statemachine.png', '03_Scientific_Figures_and_Plots/Firmware_Power_State_Machine.png'),
-    ('scratch/ai_usage_donut.png', '03_Scientific_Figures_and_Plots/AI_Usage_Donut_Chart.png'),
-    ('scratch/github_qr.png', '03_Scientific_Figures_and_Plots/GitHub_Repository_QR_Code.png'),
+    ('scratch/academic_slide3/ai_usage_donut.png', '03_Scientific_Figures_and_Plots/AI_Usage_Donut_Chart.png'),
+    ('scratch/academic_slide3/github_qr.png', '03_Scientific_Figures_and_Plots/GitHub_Repository_QR_Code.png'),
 ]
 
 # Create the ZIP file

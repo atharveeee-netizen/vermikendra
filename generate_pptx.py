@@ -10,9 +10,9 @@ prs.slide_height = Inches(7.5)
 blank_slide_layout = prs.slide_layouts[6] # Blank layout
 
 slide_images = [
-    'slide_1_cover_complete_1789389305410.jpg',
-    'slide_2_image2_style_master.jpg',
-    'slide_3_research_journal_definitive.jpg',
+    'slide_1_cover_master.jpg',
+    'slide_2_pictorial_text_1789389752199.jpg',
+    'slide_3_research_journal_master.jpg',
     'slide_4_impact_research_journal.jpg',
     'slide_6_feasibility_risk_master.jpg',
     'slide_5_team_research_journal.jpg',
