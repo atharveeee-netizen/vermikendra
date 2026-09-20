@@ -1,0 +1,20 @@
+# Vermikendra Edge Configuration
+# Place this in /etc/vermikendra/config.yaml or equivalent local directory
+
+system:
+  site_id: 1
+  timezone: "Asia/Kolkata"
+
+radio:
+  frequency: 865.0
+  bandwidth: 125.0
+  spreading_factor: 9
+  coding_rate: 5
+  sync_word: 0x12
+  tx_power: 14
+
+analytics:
+  heat_critical_c: 33.0
+  heat_warning_c: 30.0
+  respiration_min_points: 20
+  respiration_r2_threshold: 0.90

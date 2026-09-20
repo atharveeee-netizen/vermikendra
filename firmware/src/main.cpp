@@ -39,9 +39,13 @@ void loop() {
     delay(5000); // Allow SCD41 to spin up (simulate blocking wait for real firmware)
     
     PayloadType0x01 payload = {};
-    payload.node_id = 1;
+#ifdef VK_NODE_ID
+    payload.node_id = VK_NODE_ID;
+#else
+    payload.node_id = 0xFFFF; // Explicit unconfigured fault state
+#endif
     payload.seq = seq_num++;
-    payload.batt_mv = 3900; // Mock until ADC wired
+    payload.batt_mv = SENSOR_FAULT_UINT16; // Explicit fault until physical ADC is wired
     
     sensors_read_all(&payload);
     sensors_power_off();

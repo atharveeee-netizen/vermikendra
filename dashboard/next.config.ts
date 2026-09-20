@@ -1,3 +1,4 @@
+// @ts-expect-error: no types available for next-pwa
 import withPWA from 'next-pwa';
 
 const config = withPWA({
@@ -8,6 +9,7 @@ const config = withPWA({
 })({
   // Next.js config options here
   reactStrictMode: true,
+  turbopack: {},
 });
 
 export default config;

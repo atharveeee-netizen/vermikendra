@@ -1,40 +1,64 @@
+import os
 import serial
 import struct
 import sqlite3
 import datetime
 import json
+import time
 import paho.mqtt.client as mqtt
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # ---------------------------------------------------------
 # CONSTANTS & CONTRACTS
 # ---------------------------------------------------------
-DB_PATH = 'vermikendra.db'
-SERIAL_PORT = '/dev/serial0' # Assuming UART connection to Waveshare HAT
-BAUD_RATE = 115200
+DB_PATH = os.getenv('VK_DB_PATH', 'vermikendra.db')
+SERIAL_PORT = os.getenv('VK_SERIAL_PORT', '/dev/serial0')
+BAUD_RATE = int(os.getenv('VK_BAUD_RATE', '115200'))
+MQTT_BROKER = os.getenv('VK_MQTT_BROKER', '127.0.0.1')
+MQTT_PORT = int(os.getenv('VK_MQTT_PORT', '1883'))
+DEFAULT_SITE_ID = os.getenv('VK_DEFAULT_SITE_ID', '1')
 
 SENSOR_FAULT_INT16 = 0x8000
 SENSOR_FAULT_UINT16 = 0xFFFF
 
-# 44-byte binary unpack string matching firmware/src/config.h
-# B=uint8, H=uint16, h=int16, I=uint32, i=int32, b=int8, 4s=bytes[4]
 PAYLOAD_FORMAT = '<B H H B H H h h h h h h H H I H i H B b 4s'
 PAYLOAD_SIZE = struct.calcsize(PAYLOAD_FORMAT)
 
 # ---------------------------------------------------------
 # INITIALIZATION
 # ---------------------------------------------------------
-conn = sqlite3.connect(DB_PATH, isolation_level=None) # autocommit
+conn = sqlite3.connect(DB_PATH, isolation_level=None)
 conn.execute('PRAGMA journal_mode=WAL;')
 
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("[*] MQTT Connected successfully")
+    else:
+        print(f"[!] MQTT Connection failed with code {rc}")
+
 mqttc = mqtt.Client()
-mqttc.connect("127.0.0.1", 1883, 60)
+mqttc.on_connect = on_connect
+
+# Connection retry logic
+while True:
+    try:
+        mqttc.connect(MQTT_BROKER, MQTT_PORT, 60)
+        break
+    except ConnectionRefusedError:
+        print(f"[!] MQTT Broker at {MQTT_BROKER}:{MQTT_PORT} refused connection. Retrying in 5s...")
+        time.sleep(5)
+
 mqttc.loop_start()
 
 # ---------------------------------------------------------
 # UTILS
 # ---------------------------------------------------------
 def safe_int16(val):
-    return None if val == -32768 else val / 100.0  # -32768 is 0x8000 signed
+    return None if val == -32768 else val / 100.0
 
 def safe_uint16(val):
     return None if val == SENSOR_FAULT_UINT16 else val
@@ -54,11 +78,10 @@ def main():
         if ser and ser.in_waiting >= PAYLOAD_SIZE:
             raw_data = ser.read(PAYLOAD_SIZE)
         else:
-            # For demonstration without hardware, block
-            import time; time.sleep(1); continue
+            time.sleep(1)
+            continue
 
         if len(raw_data) == PAYLOAD_SIZE:
-            # 1. Unpack Binary Frame
             try:
                 unpacked = struct.unpack(PAYLOAD_FORMAT, raw_data)
             except struct.error:
@@ -74,12 +97,10 @@ def main():
                 print(f"[!] Unknown payload version: {version}")
                 continue
 
-            # Calculate actual timestamp
             ts_now = datetime.datetime.utcnow()
             ts_actual = ts_now - datetime.timedelta(seconds=age_s)
             ts_str = ts_actual.isoformat()
 
-            # 2. Translate to safe Python types (Data Contract Enforcement)
             probe_1 = safe_int16(t1)
             probe_2 = safe_int16(t2)
             probe_3 = safe_int16(t3)
@@ -92,7 +113,6 @@ def main():
 
             print(f"[*] Rx Node={node_id} Seq={seq} T1={probe_1} CO2={co2_ppm} RSSI={rssi}")
 
-            # 3. Store to SQLite WAL
             try:
                 conn.execute("""
                     INSERT INTO readings 
@@ -109,7 +129,6 @@ def main():
             except sqlite3.IntegrityError:
                 print(f"[!] Duplicate packet dropped: Node={node_id} Seq={seq}")
 
-            # 4. Publish to local MQTT for vk-engine analytics
             msg = {
                 "node": node_id,
                 "ts": ts_str,
@@ -122,8 +141,8 @@ def main():
                 "rssi": rssi,
                 "faults": faults
             }
-            # Assuming bin mapping is site-level, defaulting to 1 for MVP
-            mqttc.publish(f"vk/site1/node{node_id}/up", json.dumps(msg))
+            # Use configurable Site ID instead of hardcoded 'site1'
+            mqttc.publish(f"vk/site{DEFAULT_SITE_ID}/node{node_id}/up", json.dumps(msg))
 
 if __name__ == '__main__':
     main()

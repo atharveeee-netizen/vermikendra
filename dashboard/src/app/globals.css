@@ -2,14 +2,116 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .vk-good {
-    @apply bg-[#38a169] text-white;
+@layer base {
+  body {
+    background-color: #F9F8F4; /* Warm off-white background */
+    color: #1F2937; /* Deep neutral text (gray-800) */
+    /* Multilingual font stack prioritizing standard/Indic fonts */
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Noto Sans Devanagari", "Noto Sans Gujarati", sans-serif;
   }
-  .vk-warning {
-    @apply bg-[#dd6b20] text-white;
+}
+
+@layer components {
+  /* Primary Action Buttons - Large, Touch-Friendly */
+  .btn-primary {
+    background-color: #2d7a42;
+    color: white;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    min-height: 56px; /* >48px for easy tapping with dirty hands */
   }
-  .vk-critical {
-    @apply bg-[#e53e3e] text-white;
+  .btn-primary:active {
+    background-color: #1f5c2f;
   }
+  
+  .btn-secondary {
+    background-color: white;
+    border: 2px solid #e2e8f0;
+    color: #1e293b;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    min-height: 56px;
+  }
+  .btn-secondary:active {
+    background-color: #f8fafc;
+  }
+
+  /* Cards - Flat, Clean, Minimal Shadows */
+  .vk-card {
+    background-color: white;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    padding: 1.25rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  }
+
+  /* Status Indication Classes (Color + Text Contrast) */
+  .status-normal {
+    background-color: #e6f4ea;
+    color: #137333;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .status-warning {
+    background-color: #fef7e0;
+    color: #b06000;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .status-critical {
+    background-color: #fce8e6;
+    color: #c5221f;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .status-offline {
+    background-color: #f1f5f9;
+    color: #475569;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+/* Fix for any remnants of the old layout */
+* {
+  box-sizing: border-box;
 }
