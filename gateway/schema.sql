@@ -1,112 +1,52 @@
--- Vermikendra Offline Gateway Schema
-PRAGMA journal_mode=WAL;
-PRAGMA foreign_keys=ON;
+-- Phase 4 & Phase 10: Canonical Schema & Initialization
+
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version INTEGER PRIMARY KEY,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE IF NOT EXISTS sites (
-    id INTEGER PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    village TEXT,
-    district TEXT,
-    latitude REAL,
-    longitude REAL
+    location TEXT
 );
 
 CREATE TABLE IF NOT EXISTS bins (
-    id INTEGER PRIMARY KEY,
-    site_id INTEGER REFERENCES sites(id),
+    id TEXT PRIMARY KEY,
+    site_id TEXT NOT NULL,
     name TEXT NOT NULL,
-    volume_l REAL,
-    bed_depth_cm REAL,
-    headspace_l REAL,
-    tare_kg REAL,
-    status TEXT DEFAULT 'Good'
+    FOREIGN KEY(site_id) REFERENCES sites(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS nodes (
     id INTEGER PRIMARY KEY,
-    bin_id INTEGER REFERENCES bins(id),
-    key_id TEXT,
-    firmware_version TEXT,
-    last_seen DATETIME,
-    battery_mv INTEGER
+    bin_id TEXT NOT NULL,
+    mac_address TEXT UNIQUE,
+    fw_version TEXT,
+    last_seen TIMESTAMP,
+    FOREIGN KEY(bin_id) REFERENCES bins(id) ON DELETE CASCADE
 );
 
--- Readings Table (Strict adherence to Data Contract)
-CREATE TABLE IF NOT EXISTS readings (
-    node_id INTEGER REFERENCES nodes(id),
-    ts DATETIME NOT NULL,
-    seq INTEGER NOT NULL,
+CREATE TABLE IF NOT EXISTS telemetry (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    node_id INTEGER NOT NULL,
+    ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ambient_c REAL,
     probe_1 REAL,
     probe_2 REAL,
     probe_3 REAL,
     probe_4 REAL,
     probe_5 REAL,
-    ambient REAL,
-    rh REAL,
-    pressure REAL,
-    gas_ohm INTEGER,
     moisture_raw INTEGER,
-    moisture_pct REAL,
-    mass_g INTEGER,
     co2_ppm INTEGER,
+    mass_g REAL,
     battery_mv INTEGER,
-    rssi INTEGER,
-    snr REAL,
-    flags INTEGER,
-    faults INTEGER,
-    PRIMARY KEY (node_id, ts)
+    faults INTEGER DEFAULT 0,
+    quality TEXT DEFAULT 'VALID', -- VALID, STALE, FAULT, MISSING
+    FOREIGN KEY(node_id) REFERENCES nodes(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    bin_id INTEGER REFERENCES bins(id),
-    ts DATETIME NOT NULL,
-    type TEXT NOT NULL,
-    mass_before_g INTEGER,
-    mass_after_g INTEGER,
-    delta_g INTEGER,
-    source TEXT,
-    note TEXT
-);
-
-CREATE TABLE IF NOT EXISTS alerts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    bin_id INTEGER REFERENCES bins(id),
-    ts_open DATETIME NOT NULL,
-    ts_clear DATETIME,
-    rule_id TEXT NOT NULL,
-    severity TEXT NOT NULL,
-    value REAL,
-    message_key TEXT NOT NULL,
-    ack_user TEXT,
-    ack_ts DATETIME
-);
-
-CREATE TABLE IF NOT EXISTS respiration_runs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    bin_id INTEGER REFERENCES bins(id),
-    ts_start DATETIME NOT NULL,
-    slope_ppm_min REAL,
-    r2 REAL,
-    n_points INTEGER,
-    index_value REAL,
-    bed_temp_c REAL,
-    valid BOOLEAN DEFAULT 1
-);
-
-CREATE TABLE IF NOT EXISTS commands (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    node_id INTEGER REFERENCES nodes(id),
-    ts DATETIME NOT NULL,
-    type TEXT NOT NULL,
-    argument INTEGER,
-    status TEXT DEFAULT 'QUEUED'
-);
-
-CREATE TABLE IF NOT EXISTS calibrations (
-    node_id INTEGER REFERENCES nodes(id),
-    sensor TEXT NOT NULL,
-    parameters TEXT NOT NULL, -- Stored as JSON string
-    valid_from DATETIME NOT NULL,
-    PRIMARY KEY (node_id, sensor)
-);
+-- Basic Seed Data if empty (simulating discovery)
+INSERT OR IGNORE INTO sites (id, name, location) VALUES ('site_hq', 'Vermikendra HQ', 'Indore, India');
+INSERT OR IGNORE INTO bins (id, site_id, name) VALUES ('bin_01', 'site_hq', 'Primary Compost Bin');
+INSERT OR IGNORE INTO nodes (id, bin_id, mac_address) VALUES (101, 'bin_01', 'AA:BB:CC:DD:EE:FF');

@@ -115,17 +115,15 @@ def main():
 
             try:
                 conn.execute("""
-                    INSERT INTO readings 
-                    (node_id, ts, seq, probe_1, probe_2, probe_3, probe_4, probe_5, 
-                     ambient, rh, pressure, gas_ohm, moisture_raw, mass_g, co2_ppm, 
-                     battery_mv, rssi, flags, faults)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (node_id, ts_str, seq, probe_1, probe_2, probe_3, probe_4, probe_5,
-                      ambient, rel_hum, pressure, gas_res, moisture, mass, co2_ppm,
-                      batt_mv, rssi, flags, faults))
+                    INSERT INTO telemetry 
+                    (node_id, ts, ambient_c, probe_1, probe_2, probe_3, probe_4, probe_5, 
+                     moisture_raw, co2_ppm, mass_g, battery_mv, faults)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (node_id, ts_str, ambient, probe_1, probe_2, probe_3, probe_4, probe_5,
+                      moisture, co2_ppm, mass, batt_mv, faults))
                 
-                conn.execute("UPDATE nodes SET last_seen=?, battery_mv=? WHERE id=?", 
-                             (ts_str, batt_mv, node_id))
+                conn.execute("UPDATE nodes SET last_seen=? WHERE id=?", 
+                             (ts_str, node_id))
             except sqlite3.IntegrityError:
                 print(f"[!] Duplicate packet dropped: Node={node_id} Seq={seq}")
 

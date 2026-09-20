@@ -1,62 +1,50 @@
 import time
 import struct
-import serial
 import random
+import paho.mqtt.client as mqtt
+import json
 
 # Simulator for Vermikendra Edge Node
-# Outputs deterministic, 44-byte binary packets identical to C++ firmware.
+# Outputs deterministic JSON telemetry directly to MQTT to test E2E WebSocket and DB pipelines without Virtual Serial.
 
-PORT = 'COM1' # Use virtual serial port for windows, or /dev/ttyV0 for linux
 NODE_ID = 101
+SITE_ID = "site_hq"
+MQTT_BROKER = "127.0.0.1"
+MQTT_PORT = 1883
 
-PAYLOAD_FORMAT = '<B H H B H H h h h h h h H H I H i H B b 4s'
+print(f"[*] Starting Vermikendra Node Simulator (Node {NODE_ID}) via MQTT")
+
+mqttc = mqtt.Client()
+mqttc.connect(MQTT_BROKER, MQTT_PORT, 60)
+mqttc.loop_start()
 
 seq = 0
 base_temp = 25.0
 
-print(f"[*] Starting Vermikendra Node Simulator (Node {NODE_ID})")
-
 while True:
-    # Deterministic biological simulation
     seq += 1
-    
-    # Slight upward drift
     base_temp += random.uniform(-0.1, 0.2)
     
-    t1 = int((base_temp) * 100)
-    t2 = int((base_temp - 0.5) * 100)
-    t3 = int((base_temp - 1.0) * 100)
-    t4 = int((base_temp - 1.5) * 100)
-    t5 = 0x8000 # Simulate a broken probe 5
+    t1 = round(base_temp, 2)
+    t2 = round(base_temp - 0.5, 2)
+    t3 = round(base_temp - 1.0, 2)
+    t4 = round(base_temp - 1.5, 2)
     
-    t_amb = int((24.0) * 100)
-    rh = 6000
-    pres = 1013
-    gas_res = 50000
-    moisture = 500
-    mass = 15000
-    co2 = 800 + (seq * 2) # Simulate respiration slope
+    msg = {
+        "node": NODE_ID,
+        "seq": seq,
+        "probes_c": [t1, t2, t3, t4, None],
+        "ambient_c": 24.0,
+        "rh_pct": 60.0,
+        "co2_ppm": int(800 + (seq * 2)),
+        "moisture_raw": 500,
+        "mass_g": 15000,
+        "rssi": -65,
+        "faults": 0
+    }
     
-    version = 0x01
-    flags = 0
-    age_s = 0
-    batt_mv = 3800
-    faults = 0
-    rssi = -65
-    hmac_tag = b'ABCD'
-
-    try:
-        packet = struct.pack(PAYLOAD_FORMAT,
-            version, NODE_ID, seq, flags, age_s, batt_mv,
-            t1, t2, t3, t4, t5, t_amb, rh, pres,
-            gas_res, moisture, mass, co2,
-            faults, rssi, hmac_tag
-        )
-        
-        # NOTE: For local testing without a virtual serial port loopback,
-        # you can pipe this directly to a file, or modify vk_ingest to read from stdin/socket.
-        print(f"PACKET: Node={NODE_ID} Seq={seq} T1={base_temp:.1f}C CO2={co2}ppm")
-    except Exception as e:
-        print(e)
-        
+    topic = f"vk/{SITE_ID}/node{NODE_ID}/up"
+    mqttc.publish(topic, json.dumps(msg))
+    
+    print(f"PUBLISHED -> {topic} : T1={t1}C CO2={msg['co2_ppm']}ppm")
     time.sleep(5)
