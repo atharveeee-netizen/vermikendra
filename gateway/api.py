@@ -6,7 +6,7 @@ from typing import List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import paho.mqtt.client as mqtt
+from pydantic import BaseModel
 
 # Local modules
 from db import get_connection
@@ -33,9 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MQTT_BROKER = os.getenv('VK_MQTT_BROKER', '127.0.0.1')
-MQTT_PORT = int(os.getenv('VK_MQTT_PORT', '1883'))
-SARVAM_API_KEY = os.getenv('SARVAM_API_KEY', '')
+SARVAM_API_KEY = os.getenv('SARVAM_API_KEY', 'sk_b7zyfv59_q1pV0JXoTApKDUQ8oITKGtFK')
 
 # ---------------------------------------------------------
 # ERROR HANDLING (Phase 48)
@@ -84,34 +82,24 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-def on_mqtt_message(client, userdata, msg):
-    try:
-        payload = msg.payload.decode('utf-8')
-        # Phase 12: We should validate payload and emit typed telemetry event
-        # For now we broadcast the JSON
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            return
-        asyncio.run_coroutine_threadsafe(manager.broadcast(payload), loop)
-    except Exception as e:
-        print(f"[!] MQTT->WS Bridge Error: {e}")
+class TelemetryPayload(BaseModel):
+    node: int
+    seq: int
+    probes_c: List[float | None]
+    ambient_c: float | None
+    rh_pct: float | None
+    co2_ppm: int | None
+    mass_g: float | None
+    rssi: int | None
+    faults: int
+    ts: str | None = None
 
-mqttc = mqtt.Client()
-mqttc.on_message = on_mqtt_message
-
-@app.on_event("startup")
-async def startup_event():
-    try:
-        mqttc.connect(MQTT_BROKER, MQTT_PORT, 60)
-        mqttc.subscribe("vk/+/+/up")
-        mqttc.loop_start()
-    except Exception as e:
-        print(f"[!] Could not start API MQTT listener: {e}")
-
-@app.on_event("shutdown")
-def shutdown_event():
-    mqttc.loop_stop()
+@app.post("/api/internal/telemetry")
+async def ingest_telemetry(payload: TelemetryPayload):
+    # Phase 12: Internal bridge replacing MQTT
+    msg = payload.json()
+    await manager.broadcast(msg)
+    return {"status": "broadcasted"}
 
 # ---------------------------------------------------------
 # DISCOVERY API (Phase 3 & 9)
@@ -209,11 +197,13 @@ async def process_voice_query(
     
     try:
         r = requests.post(url, headers=headers, files=files, data=data, timeout=15)
-        if r.status_code != 200:
-            raise StandardApiError("STT_FAILED", "Transcription failed from provider", retryable=True, status_code=502)
-        transcription = r.json().get('transcript', '')
     except Exception:
         raise StandardApiError("STT_UNAVAILABLE", "Failed to reach STT provider", retryable=True, status_code=503)
+
+    if r.status_code != 200:
+        raise StandardApiError("STT_FAILED", f"Transcription failed: {r.text}", retryable=True, status_code=502)
+        
+    transcription = r.json().get('transcript', '')
 
     if not transcription.strip():
         raise StandardApiError("EMPTY_AUDIO", "Could not hear any speech", retryable=True)

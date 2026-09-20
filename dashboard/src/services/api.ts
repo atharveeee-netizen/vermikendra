@@ -1,7 +1,7 @@
 import { Site, Bin, Node, TelemetryContract } from '../types';
 
 // Use environment variable if deployed to cloud, fallback to local network origin
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function fetchSites(): Promise<Site[]> {
   const res = await fetch(`${API_BASE}/sites`);

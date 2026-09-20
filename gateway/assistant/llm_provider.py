@@ -20,6 +20,8 @@ class DeterministicFallbackLLM(LLMProvider):
                 return f"बेड का तापमान {temp} डिग्री है।"
             elif intent == "MOISTURE":
                 return f"नमी का स्तर {moist} है।"
+            elif intent == "UNKNOWN":
+                return "मुझे इस प्रश्न का उत्तर नहीं पता।"
             else:
                 return f"बेड सामान्य है। तापमान {temp} डिग्री और नमी {moist} है।"
                 
@@ -28,6 +30,8 @@ class DeterministicFallbackLLM(LLMProvider):
                 return f"બેડનું તાપમાન {temp} ડિગ્રી છે."
             elif intent == "MOISTURE":
                 return f"ભેજનું સ્તર {moist} છે."
+            elif intent == "UNKNOWN":
+                return "મને આ પ્રશ્નનો જવાબ ખબર નથી."
             else:
                 return f"બેડ સામાન્ય છે. તાપમાન {temp} ડિગ્રી અને ભેજ {moist} છે."
                 
@@ -36,6 +40,8 @@ class DeterministicFallbackLLM(LLMProvider):
                 return f"The bed temperature is {temp} degrees."
             elif intent == "MOISTURE":
                 return f"The moisture level is {moist}."
+            elif intent == "UNKNOWN":
+                return "I don't know the answer to that question."
             else:
                 return f"The bed is normal. Temperature is {temp} degrees and moisture is {moist}."
 

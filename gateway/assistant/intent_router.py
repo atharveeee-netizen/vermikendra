@@ -32,7 +32,7 @@ def route_intent(transcript: str, language: str) -> str:
             return TEMPERATURE
         if any(w in text for w in ["moisture", "water", "dry", "wet"]):
             return MOISTURE
-        if any(w in text for w in ["status", "how", "condition"]):
+        if any(w in text for w in ["status", "condition"]):
             return STATUS
             
     return UNKNOWN

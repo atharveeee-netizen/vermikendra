@@ -46,7 +46,4 @@ CREATE TABLE IF NOT EXISTS telemetry (
     FOREIGN KEY(node_id) REFERENCES nodes(id) ON DELETE CASCADE
 );
 
--- Basic Seed Data if empty (simulating discovery)
-INSERT OR IGNORE INTO sites (id, name, location) VALUES ('site_hq', 'Vermikendra HQ', 'Indore, India');
-INSERT OR IGNORE INTO bins (id, site_id, name) VALUES ('bin_01', 'site_hq', 'Primary Compost Bin');
-INSERT OR IGNORE INTO nodes (id, bin_id, mac_address) VALUES (101, 'bin_01', 'AA:BB:CC:DD:EE:FF');
+

@@ -5,7 +5,7 @@ import sqlite3
 import datetime
 import json
 import time
-import paho.mqtt.client as mqtt
+import requests
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -18,9 +18,7 @@ except ImportError:
 DB_PATH = os.getenv('VK_DB_PATH', 'vermikendra.db')
 SERIAL_PORT = os.getenv('VK_SERIAL_PORT', '/dev/serial0')
 BAUD_RATE = int(os.getenv('VK_BAUD_RATE', '115200'))
-MQTT_BROKER = os.getenv('VK_MQTT_BROKER', '127.0.0.1')
-MQTT_PORT = int(os.getenv('VK_MQTT_PORT', '1883'))
-DEFAULT_SITE_ID = os.getenv('VK_DEFAULT_SITE_ID', '1')
+API_URL = "http://127.0.0.1:8000/api/internal/telemetry"
 
 SENSOR_FAULT_INT16 = 0x8000
 SENSOR_FAULT_UINT16 = 0xFFFF
@@ -34,25 +32,7 @@ PAYLOAD_SIZE = struct.calcsize(PAYLOAD_FORMAT)
 conn = sqlite3.connect(DB_PATH, isolation_level=None)
 conn.execute('PRAGMA journal_mode=WAL;')
 
-def on_connect(client, userdata, flags, rc):
-    if rc == 0:
-        print("[*] MQTT Connected successfully")
-    else:
-        print(f"[!] MQTT Connection failed with code {rc}")
-
-mqttc = mqtt.Client()
-mqttc.on_connect = on_connect
-
-# Connection retry logic
-while True:
-    try:
-        mqttc.connect(MQTT_BROKER, MQTT_PORT, 60)
-        break
-    except ConnectionRefusedError:
-        print(f"[!] MQTT Broker at {MQTT_BROKER}:{MQTT_PORT} refused connection. Retrying in 5s...")
-        time.sleep(5)
-
-mqttc.loop_start()
+# Removed MQTT Connection Logic
 
 # ---------------------------------------------------------
 # UTILS
@@ -139,8 +119,10 @@ def main():
                 "rssi": rssi,
                 "faults": faults
             }
-            # Use configurable Site ID instead of hardcoded 'site1'
-            mqttc.publish(f"vk/site{DEFAULT_SITE_ID}/node{node_id}/up", json.dumps(msg))
+            try:
+                requests.post(API_URL, json=msg, timeout=2)
+            except Exception as e:
+                print(f"[!] Failed to push to API: {e}")
 
 if __name__ == '__main__':
     main()

@@ -50,7 +50,11 @@ export default function Home() {
             } else {
               setInitError("No active sensors found in bin.");
             }
+          } else {
+            setInitError("No beds configured for this site.");
           }
+        } else {
+          setInitError("No sites configured.");
         }
       } catch (err) {
         setInitError("Cannot reach Vermikendra gateway.");
@@ -100,7 +104,7 @@ export default function Home() {
       formData.append("language", language);
       formData.append("node_id", node.id.toString());
 
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
       const res = await fetch(`${API_BASE}/assistant/voice`, { method: "POST", body: formData });
       
       if (!res.ok) {
@@ -176,7 +180,14 @@ export default function Home() {
         
         <section className="vk-card">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-black tracking-tight uppercase">{bin?.name || "BED"}</h2>
+            <div>
+              <h2 className="text-2xl font-black tracking-tight uppercase">{bin?.name || "BED"}</h2>
+              {node.id.startsWith("SIM-") && (
+                <span className="inline-flex items-center px-2 py-1 mt-2 rounded-md text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                  SIMULATION
+                </span>
+              )}
+            </div>
             {!isConnected ? (
               <span className="status-offline">
                 <span className="w-2 h-2 rounded-full bg-slate-400"></span>
