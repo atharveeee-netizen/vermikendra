@@ -6,7 +6,7 @@
 // SX1262 setup on RAK4631
 SX1262 radio = new Module(PIN_LORA_NSS, PIN_LORA_DIO_1, PIN_LORA_RESET, PIN_LORA_BUSY);
 
-RTC_DATA_ATTR uint16_t seq_num = 0; // Persists in deep sleep
+uint16_t seq_num = 0; // Persists in deep sleep (nRF52 uses RAM retention)
 
 void setup() {
     Serial.begin(115200);

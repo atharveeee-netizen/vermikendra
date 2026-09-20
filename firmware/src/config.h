@@ -4,6 +4,18 @@
 // ---------------------------------------------------------
 // HARDWARE PIN MAPPINGS (From Phase 5)
 // ---------------------------------------------------------
+#ifndef WB_IO1
+  #define WB_IO1 1
+  #define WB_IO2 2
+  #define WB_IO3 3
+  #define WB_IO4 4
+  #define WB_IO5 5
+  #define WB_A1  A1
+  #define PIN_LORA_NSS 8
+  #define PIN_LORA_DIO_1 9
+  #define PIN_LORA_RESET 10
+  #define PIN_LORA_BUSY 11
+#endif
 #define PIN_3V3_S       WB_IO2      // Power control for sensors
 #define PIN_1WIRE       WB_IO1      // DS18B20 Array (Needs physical 4.7k pullup)
 #define PIN_TILT_INT    WB_IO3      // LIS3DH Interrupt
