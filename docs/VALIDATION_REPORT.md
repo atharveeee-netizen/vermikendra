@@ -19,7 +19,7 @@ The entire Vermikendra codebase has been subjected to a strict Red Team validati
 ## 3. Sarvam STT & Voice Integration (Phase 23-36)
 - **Finding:** The Voice Assistant intent router was failing to catch out-of-bounds questions (e.g., asking about rain).
 - **Fix:** Patched `intent_router.py` and `llm_provider.py` to actively trap `UNKNOWN` intents and respond with explicit rejection strings ("I don't know the answer to that"). 
-- **Validation:** The real Sarvam API (`sk_b7zyfv59...`) was integrated. Dummy payload tests confirmed successful connection and correct `invalid_request_error` handling. 
+- **Validation:** The real Sarvam API was integrated via environment variables. Dummy payload tests confirmed successful connection and correct `invalid_request_error` handling. 
 
 ## 4. Offline & Stale Data UX (Phase 37-45)
 - **Finding:** Needs resilient handling for offline state.

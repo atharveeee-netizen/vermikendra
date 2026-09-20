@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { TelemetryContract } from '../types';
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL;
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://127.0.0.1:8000/ws/telemetry";
 
 export function useTelemetry(nodeId: number | null) {
   const [telemetry, setTelemetry] = useState<TelemetryContract | null>(null);

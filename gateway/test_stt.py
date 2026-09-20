@@ -2,7 +2,8 @@ import requests
 import os
 
 url = "https://api.sarvam.ai/speech-to-text"
-headers = {"api-subscription-key": "sk_b7zyfv59_q1pV0JXoTApKDUQ8oITKGtFK"}
+api_key = os.getenv("SARVAM_API_KEY")
+headers = {"api-subscription-key": api_key if api_key else ""}
 files = {'file': ('question.webm', b"dummy audio content", 'audio/webm')}
 data = {'language_code': "en-IN"}
 

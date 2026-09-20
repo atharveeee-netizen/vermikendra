@@ -14,6 +14,7 @@ from assistant.context_builder import build_node_context
 from assistant.intent_router import route_intent
 from assistant.llm_provider import get_llm_provider
 from assistant.tts_provider import get_tts_provider
+from core.ingestion import ingest_telemetry_payload, calculate_status, DuplicateTelemetryError, ValidationError
 
 try:
     from dotenv import load_dotenv
@@ -33,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SARVAM_API_KEY = os.getenv('SARVAM_API_KEY', 'sk_b7zyfv59_q1pV0JXoTApKDUQ8oITKGtFK')
+SARVAM_API_KEY = os.getenv('SARVAM_API_KEY')
 
 # ---------------------------------------------------------
 # ERROR HANDLING (Phase 48)
@@ -85,21 +86,28 @@ manager = ConnectionManager()
 class TelemetryPayload(BaseModel):
     node: int
     seq: int
-    probes_c: List[float | None]
-    ambient_c: float | None
-    rh_pct: float | None
-    co2_ppm: int | None
-    mass_g: float | None
-    rssi: int | None
-    faults: int
+    probes_c: List[float | None] = []
+    ambient_c: float | None = None
+    rh_pct: float | None = None
+    co2_ppm: int | None = None
+    mass_g: float | None = None
+    rssi: int | None = None
+    faults: int = 0
     ts: str | None = None
 
 @app.post("/api/internal/telemetry")
 async def ingest_telemetry(payload: TelemetryPayload):
-    # Phase 12: Internal bridge replacing MQTT
-    msg = payload.json()
-    await manager.broadcast(msg)
-    return {"status": "broadcasted"}
+    try:
+        canonical_event = ingest_telemetry_payload(payload.dict())
+        # Phase 3 & 4: Only broadcast if DB insertion succeeds
+        await manager.broadcast(json.dumps(canonical_event))
+        return {"status": "broadcasted"}
+    except DuplicateTelemetryError as e:
+        return JSONResponse(status_code=409, content={"status": "duplicate", "message": str(e)})
+    except ValidationError as e:
+        raise StandardApiError("INVALID_TELEMETRY", str(e), retryable=False, status_code=400)
+    except Exception as e:
+        raise StandardApiError("INTERNAL_ERROR", str(e), retryable=True, status_code=500)
 
 # ---------------------------------------------------------
 # DISCOVERY API (Phase 3 & 9)
@@ -141,22 +149,19 @@ def get_latest_telemetry(node_id: int):
     if not context:
         raise StandardApiError("NO_TELEMETRY", "No telemetry found for node", retryable=False, status_code=404)
         
-    # Phase 6: Server-side Status computation
-    temp = context.get('ambient_c') or context.get('probe_1')
-    faults = context.get('faults', 0)
-    
-    status = "NORMAL"
-    reason = ""
-    
-    if faults > 0:
-        status = "SENSOR_FAULT"
-        reason = "Hardware sensor fault detected."
-    elif temp and temp > 32.0:
-        status = "ACTION_NEEDED"
-        reason = "Temperature exceeds normal operating threshold."
-    elif temp and temp > 30.0:
-        status = "WATCH"
-        reason = "Temperature is elevated."
+    # Phase 6 & 10: Server-side Status computation via canonical function
+    probes_c = [
+        context.get('probe_1'),
+        context.get('probe_2'),
+        context.get('probe_3'),
+        context.get('probe_4'),
+        context.get('probe_5')
+    ]
+    context_for_status = {
+        "faults": context.get('faults', 0),
+        "probes_c": probes_c
+    }
+    status, reason = calculate_status(context_for_status)
         
     context['computed_status'] = status
     context['computed_reason'] = reason

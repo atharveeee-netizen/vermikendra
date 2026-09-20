@@ -47,8 +47,8 @@ A scientific vermicompost telemetry and agricultural monitoring system designed 
    npm install
    npm run dev           # Starts Next.js on port 3000
    ```
-3. Run the Simulator (to inject deterministc telemetry directly into the DB):
+3. Run the Canonical Simulator (streams E2E telemetry via HTTP):
    ```bash
    cd gateway
-   python test_phase7_inject.py
+   python simulator.py
    ```

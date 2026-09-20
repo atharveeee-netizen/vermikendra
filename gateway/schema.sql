@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS telemetry (
     mass_g REAL,
     battery_mv INTEGER,
     faults INTEGER DEFAULT 0,
+    seq INTEGER,
     quality TEXT DEFAULT 'VALID', -- VALID, STALE, FAULT, MISSING
     FOREIGN KEY(node_id) REFERENCES nodes(id) ON DELETE CASCADE
 );

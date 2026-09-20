@@ -182,7 +182,7 @@ export default function Home() {
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-2xl font-black tracking-tight uppercase">{bin?.name || "BED"}</h2>
-              {node.id.startsWith("SIM-") && (
+              {node.id >= 100 && (
                 <span className="inline-flex items-center px-2 py-1 mt-2 rounded-md text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
                   SIMULATION
                 </span>
