@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .vk-good {
+    @apply bg-[#38a169] text-white;
+  }
+  .vk-warning {
+    @apply bg-[#dd6b20] text-white;
+  }
+  .vk-critical {
+    @apply bg-[#e53e3e] text-white;
+  }
+}
