@@ -1,71 +1,55 @@
-# 🌱 Vermikendra
+# 🌱 Vermikendra: High-Resilience Vermiculture Telemetry
 
-![Status: Syzygy Validated](https://img.shields.io/badge/Status-Syzygy_Validated-success)
-![Firmware: Compiled](https://img.shields.io/badge/Firmware-Compiled_(nRF52)-blue)
-![Database: Postgres](https://img.shields.io/badge/Database-PostgreSQL-blueviolet)
+![Status: Verified](https://img.shields.io/badge/Status-Simulation_Validated-success)
+![Firmware: Compiled](https://img.shields.io/badge/Firmware-nRF52_Ready-blue)
+![Database: Postgres](https://img.shields.io/badge/Backend-PostgreSQL-blueviolet)
 
-A high-resilience, deterministic, off-grid **Vermiculture Telemetry & Agricultural Monitoring System**, designed explicitly for zero-literacy usability and maximum hardware accountability.
-
----
-
-## 📖 The Philosophy
-
-1. **No "AI Slop"**: The system never attempts to sound artificially intelligent or hallucinate advice. It delivers binary state data (e.g., "The compost bed is dangerously hot") using strict deterministic rule engines.
-2. **Zero UI Density**: The farmer interacts with the absolute minimum UI footprint. It features large typography, stark state-based color coding, and an ambient voice interface. No dense graphs, no cluttered dashboards.
-3. **Absolute Ground Truth**: The Next.js frontend is deliberately stateless and "dumb." It only renders exactly what the PostgreSQL database can cryptographically prove was received from the physical hardware edge.
+Vermikendra is a deterministic, off-grid **Agricultural Monitoring and Telemetry System** designed specifically to optimize vermicomposting yields. It is engineered for zero-literacy usability, deploying robust IoT edge nodes that transmit critical soil metrics over LoRaWAN to a local, resilient dashboard.
 
 ---
 
-## 🏗️ Architecture
+## 📖 Project Overview
 
-Vermikendra operates on a robust three-tier architecture, designed to survive intermittent power loss, zero internet connectivity, and hardware degradation.
+1. **Precision Agriculture at the Edge**: Vermikendra utilizes bare-metal C++ firmware deployed on Nordic nRF52/RAK4631 nodes, gathering real-time telemetry from DS18B20 temperature arrays, SCD41 CO2 sensors, and capacitive soil moisture probes.
+2. **Zero-Literacy Farmer UI**: The frontend is deliberately simplified. Farmers are not burdened with complex graphs or data tables. Instead, they receive stark, color-coded binary state alerts (e.g., "Bed is too hot") alongside an accessible ambient voice interface.
+3. **High-Resilience Architecture**: The system is built for rural environments with intermittent internet and power. The local Next.js frontend securely reflects the immutable ground truth stored in a local PostgreSQL backend, driven by a Python FastAPI bridge.
+
+---
+
+## 🏗️ System Architecture
+
+The ecosystem relies on a three-tier architecture ensuring deterministic data flow from the soil bed to the farmer's tablet.
 
 ```mermaid
 graph TD
     subgraph Edge Nodes [Physical IoT Hardware]
-        A[RAK4631 / nRF52] -->|Sensors| B(DS18B20 Temp Array)
-        A -->|I2C| C(SCD41 CO2)
+        A[nRF52 MCU] -->|1-Wire| B(Temp Array)
+        A -->|I2C| C(CO2 & Humidity)
         A -->|ADC| D(Soil Moisture)
-        A -->|Deep Sleep / Wake| E((LoRaWAN SX1262))
+        A -->|Sleep/Wake| E((LoRaWAN SX1262))
     end
 
-    subgraph Gateway [Local Field Server]
+    subgraph Field Gateway [Local Server]
         E -->|RF Payload| F{LoRa Gateway}
-        F -->|JSON| G[Python Data Ingestion]
+        F -->|JSON| G[Python Ingestion Service]
         G --> H[(PostgreSQL)]
         H --> I[FastAPI REST / WS Bridge]
     end
 
     subgraph User Interface [Farmer Tablet/Mobile]
         I -->|WebSocket| J[Next.js PWA]
-        J --> K((Voice Interface STT/TTS))
+        J --> K((Voice Assistant))
     end
 ```
 
 ---
 
-## 🛡️ Validation & Syzygy Status
+## 🚀 Quick Start (Local Simulation)
 
-> [!IMPORTANT]
-> The claims in this repository are strictly audited by the **Syzygy Adversarial Red Team** protocol. Code without empirical proof is considered non-existent.
-
-| Component | Architecture | Syzygy Evidence | Status |
-| :--- | :--- | :--- | :--- |
-| **Edge Firmware** | C++ (PlatformIO / nRF52) | Cross-compilation successful. Hardware pin mappings polyfilled. | 🟢 **COMPILED** |
-| **Ingestion Pipeline** | Python / Bottle | Handles malformed payloads, idempotency, and sequence tracking. | 🟢 **VALIDATED** |
-| **Database** | PostgreSQL | Strict schemas, timestamp injection, and persistent storage proven. | 🟢 **VALIDATED** |
-| **API Layer** | FastAPI / WebSockets | Exponential backoff, real-time broadcasts. | 🟢 **VALIDATED** |
-| **Frontend UI** | Next.js / Tailwind | Hydration stable, dynamic "Zero-State" resilience proven. | 🟢 **VALIDATED** |
-| **Physical Hardware** | RAK4631 + Sensors | Physical radio transmission in the field. | 🔴 **UNVERIFIED** |
-
----
-
-## 🚀 Quick Start (Simulation Mode)
-
-You can run the entire Vermikendra software stack locally without requiring physical LoRaWAN hardware. The system includes a canonical simulator that generates cryptographically accurate edge-node payloads.
+The repository includes a full-stack simulator that generates cryptographically accurate edge-node payloads, allowing the entire system to be run without physical hardware.
 
 ### 1. Start the Backend Gateway
-Requires PostgreSQL installed and running on `localhost:5432`.
+*Prerequisite: PostgreSQL running locally on `localhost:5432` with a database named `vermikendra`.*
 
 ```bash
 cd gateway
@@ -83,10 +67,10 @@ cd dashboard
 npm install
 npm run dev
 ```
-The Farmer UI is now accessible at [http://localhost:3000](http://localhost:3000).
+The UI is now accessible at [http://localhost:3000](http://localhost:3000).
 
 ### 3. Inject Simulated Telemetry
-In a separate terminal, trigger the hardware simulator to stream sensor payloads into the PostgreSQL backend. The UI will instantly react via WebSockets.
+In a separate terminal, trigger the hardware simulator to stream sensor payloads into the PostgreSQL backend. The React dashboard will instantly update in real-time.
 
 ```bash
 cd gateway
@@ -98,15 +82,26 @@ python simulator.py
 
 ## 🛠️ Firmware Build
 
-The edge-node C++ firmware is built using **PlatformIO**. It explicitly targets the Nordic nRF52 ARM Cortex-M4F architecture.
+The physical edge-node C++ firmware is built using **PlatformIO**, targeting the Nordic nRF52 ARM Cortex-M4F architecture.
 
 ```bash
 cd firmware
 pio run
 ```
-*Dependencies (automatically fetched): RadioLib (LoRaWAN), DallasTemperature, Sensirion I2C SCD4x, Adafruit LIS3DH.*
+*Dependencies (handled automatically): RadioLib (SX1262 LoRaWAN), DallasTemperature, Sensirion I2C SCD4x, Adafruit LIS3DH.*
+
+---
+
+## 📂 Repository Structure
+
+- `/dashboard`: Next.js React frontend (Farmer UI).
+- `/gateway`: Python FastAPI backend, database models, and payload simulator.
+- `/firmware`: C++ PlatformIO source code for physical IoT edge nodes.
+- `/docs`: Extensive documentation, forensic validation reports, and architecture decisions.
+- `/presentation`: Project presentation assets, slide generator scripts, and graphics.
+- `/hardware`: Electronic schematics and CAD references.
 
 ---
 
 ## 📜 License
-*Proprietary / Closed Source*
+*Proprietary / Academic Project Submission*
