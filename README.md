@@ -3,6 +3,9 @@
 ![Status: Verified](https://img.shields.io/badge/Status-Simulation_Validated-success)
 ![Firmware: Compiled](https://img.shields.io/badge/Firmware-nRF52_Ready-blue)
 ![Database: Postgres](https://img.shields.io/badge/Backend-PostgreSQL-blueviolet)
+[![Vercel Deployment](https://img.shields.io/badge/Live_Dashboard-Vercel-black?logo=vercel)](https://vermikendra.vercel.app/)
+
+**🔗 Live Demo (Farmer UI):** [https://vermikendra.vercel.app/](https://vermikendra.vercel.app/)
 
 Vermikendra is a deterministic, off-grid **Agricultural Monitoring and Telemetry System** designed specifically to optimize vermicomposting yields. It is engineered for zero-literacy usability, deploying robust IoT edge nodes that transmit critical soil metrics over LoRaWAN to a local, resilient dashboard.
 
