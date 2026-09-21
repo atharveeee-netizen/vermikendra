@@ -58,9 +58,9 @@ export default function Home() {
         }
       } catch (err) {
         if (typeof window !== 'undefined' && (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('github.io'))) {
-           setSite({ id: 1, name: 'Demo Site', location: 'Virtual', created_at: '' });
-           setBin({ id: 1, site_id: 1, name: 'Demo Bed', created_at: '' });
-           setNode({ id: 999, bin_id: 1, hardware_id: 'SIMULATOR', status: 'ACTIVE', battery_v: 4.2, created_at: '' });
+           setSite({ id: "1", name: 'Demo Site', location: 'Virtual', created_at: '' } as any);
+           setBin({ id: "1", site_id: "1", name: 'Demo Bed', created_at: '' } as any);
+           setNode({ id: 999, bin_id: "1", hardware_id: 'SIMULATOR', status: 'ACTIVE', battery_v: 4.2, created_at: '' } as any);
            return;
         }
         setInitError("Cannot reach Vermikendra gateway.");
