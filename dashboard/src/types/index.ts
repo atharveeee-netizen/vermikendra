@@ -4,10 +4,20 @@ export interface Site {
   location: string | null;
 }
 
-export interface Bin {
+export interface Field {
   id: string;
   site_id: string;
   name: string;
+  boundary: string | null;
+}
+
+export interface Bin {
+  id: string;
+  site_id: string;
+  field_id: string | null;
+  name: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface Node {

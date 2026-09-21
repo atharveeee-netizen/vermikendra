@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchSites, fetchBins, fetchNodes } from "../services/api";
-import { Site, Bin, Node } from "../types";
+import { fetchSites, fetchBins, fetchNodes, fetchFields } from "../services/api";
+import { Site, Bin, Node, Field } from "../types";
 import { Activity, Thermometer, Droplet, ChevronRight } from "lucide-react";
 
 export default function Home() {
   const [site, setSite] = useState<Site | null>(null);
+  const [fields, setFields] = useState<Field[]>([]);
   const [bins, setBins] = useState<Bin[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [initError, setInitError] = useState("");
@@ -16,9 +17,10 @@ export default function Home() {
   useEffect(() => {
     async function discover() {
       try {
-        const sites = await fetchSites();
+        const [sites, fieldsData] = await Promise.all([fetchSites(), fetchFields()]);
         if (sites.length > 0) {
           setSite(sites[0]);
+          setFields(fieldsData);
           const siteBins = await fetchBins(sites[0].id);
           setBins(siteBins);
           
@@ -75,7 +77,14 @@ export default function Home() {
                      </div>
                      <div>
                        <h3 className="font-bold text-slate-800 text-lg uppercase">Node {node.id}</h3>
-                       <p className="text-xs text-slate-500">{bins.find(b => b.id === node.bin_id)?.name || "Unknown Bin"}</p>
+                       <p className="text-xs text-slate-500 font-medium">
+                         {(() => {
+                           const bin = bins.find(b => b.id === node.bin_id);
+                           if (!bin) return "Unknown Asset";
+                           const field = fields.find(f => f.id === bin.field_id);
+                           return `${field?.name || 'Unassigned'} • ${bin.name}`;
+                         })()}
+                       </p>
                      </div>
                   </div>
                   <span className="status-normal text-[10px]">ACTIVE</span>

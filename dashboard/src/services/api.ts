@@ -1,4 +1,4 @@
-import { Site, Bin, Node, TelemetryContract } from '../types';
+import { Site, Field, Bin, Node, TelemetryContract } from '../types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -6,6 +6,12 @@ export async function fetchSites(): Promise<Site[]> {
   if (!API_BASE) throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured.");
   const res = await fetch(`${API_BASE}/sites`);
   if (!res.ok) throw new Error("Failed to fetch sites");
+  return res.json();
+}
+
+export async function fetchFields(): Promise<Field[]> {
+  const res = await fetch(`${API_BASE}/fields`);
+  if (!res.ok) throw new Error("Failed to fetch fields");
   return res.json();
 }
 

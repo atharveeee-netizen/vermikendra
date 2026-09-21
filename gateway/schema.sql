@@ -1,4 +1,4 @@
--- Phase 4 & Phase 10: Canonical Schema & Initialization
+-- Phase 4, 10, & MAP-01: Canonical Schema & Initialization
 
 CREATE TABLE IF NOT EXISTS schema_migrations (
     version INTEGER PRIMARY KEY,
@@ -11,11 +11,25 @@ CREATE TABLE IF NOT EXISTS sites (
     location TEXT
 );
 
-CREATE TABLE IF NOT EXISTS bins (
+-- MAP-02: Field Entity
+CREATE TABLE IF NOT EXISTS fields (
     id TEXT PRIMARY KEY,
     site_id TEXT NOT NULL,
     name TEXT NOT NULL,
+    boundary TEXT, -- MAP-03: GeoJSON Polygon
     FOREIGN KEY(site_id) REFERENCES sites(id) ON DELETE CASCADE
+);
+
+-- MAP-04: Bed Coordinates
+CREATE TABLE IF NOT EXISTS bins (
+    id TEXT PRIMARY KEY,
+    site_id TEXT NOT NULL,
+    field_id TEXT,
+    name TEXT NOT NULL,
+    latitude REAL,
+    longitude REAL,
+    FOREIGN KEY(site_id) REFERENCES sites(id) ON DELETE CASCADE,
+    FOREIGN KEY(field_id) REFERENCES fields(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS nodes (
@@ -46,5 +60,3 @@ CREATE TABLE IF NOT EXISTS telemetry (
     quality TEXT DEFAULT 'VALID', -- VALID, STALE, FAULT, MISSING
     FOREIGN KEY(node_id) REFERENCES nodes(id) ON DELETE CASCADE
 );
-
-

@@ -124,6 +124,22 @@ def get_sites():
     conn.close()
     return sites
 
+@app.get("/api/fields")
+def get_fields():
+    conn = get_connection()
+    cur = conn.execute("SELECT * FROM fields")
+    fields = [dict(row) for row in cur.fetchall()]
+    conn.close()
+    return fields
+
+@app.get("/api/fields/{field_id}/bins")
+def get_field_bins(field_id: str):
+    conn = get_connection()
+    cur = conn.execute("SELECT * FROM bins WHERE field_id = ?", (field_id,))
+    bins = [dict(row) for row in cur.fetchall()]
+    conn.close()
+    return bins
+
 @app.get("/api/sites/{site_id}/bins")
 def get_bins(site_id: str):
     conn = get_connection()
