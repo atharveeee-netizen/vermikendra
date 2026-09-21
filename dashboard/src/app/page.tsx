@@ -6,6 +6,8 @@ import { fetchSites, fetchFields, fetchSiteFleet } from "../services/api";
 import { Site, Field, FleetData, FleetNode } from "../types";
 import { Thermometer, Droplet, Activity, ChevronRight, CheckCircle2, AlertTriangle, XCircle, CloudSun, AlertCircle } from "lucide-react";
 
+import WeatherWidget from "../components/WeatherWidget";
+
 export default function Home() {
   const [site, setSite] = useState<Site | null>(null);
   const [fields, setFields] = useState<Field[]>([]);
@@ -75,7 +77,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen pb-24 bg-[#F9F8F4]">
       {/* Header - A1 */}
       <header className="bg-[#2d7a42] text-white p-5 pb-8 rounded-b-[2rem] shadow-md relative z-10">
-        <div className="flex justify-between items-start mb-4">
+        <div className="flex justify-between items-start mb-2">
            <div>
              <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-bold text-green-200 uppercase tracking-widest">Site</span>
@@ -87,20 +89,8 @@ export default function Home() {
            </div>
         </div>
 
-        {/* Weather placeholder (A9) */}
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 flex justify-between items-center mt-2">
-            <div>
-               <p className="text-xs text-green-100 font-medium">Pune, Maharashtra</p>
-               <div className="flex items-center gap-3 mt-1">
-                  <CloudSun className="w-5 h-5 text-yellow-300" />
-                  <span className="font-bold">29° Clear</span>
-               </div>
-            </div>
-            <div className="text-right flex items-center gap-4 text-sm font-medium">
-               <span className="flex items-center gap-1"><Droplet className="w-3 h-3 text-blue-300" /> 17%</span>
-               <span>🌬️ 12km/h</span>
-            </div>
-        </div>
+        {/* Live Weather & Heatwave Protective Forecast (Open-Meteo) */}
+        <WeatherWidget />
       </header>
 
       <main className="p-4 flex flex-col gap-5 max-w-lg mx-auto w-full -mt-4 relative z-20">
