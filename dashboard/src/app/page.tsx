@@ -57,12 +57,6 @@ export default function Home() {
           setInitError("No sites configured.");
         }
       } catch (err) {
-        if (typeof window !== 'undefined' && (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('github.io'))) {
-           setSite({ id: "1", name: 'Demo Site', location: 'Virtual', created_at: '' } as any);
-           setBin({ id: "1", site_id: "1", name: 'Demo Bed', created_at: '' } as any);
-           setNode({ id: 999, bin_id: "1", hardware_id: 'SIMULATOR', status: 'ACTIVE', battery_v: 4.2, created_at: '' } as any);
-           return;
-        }
         setInitError("Cannot reach Vermikendra gateway.");
       }
     }
@@ -188,11 +182,6 @@ export default function Home() {
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-2xl font-black tracking-tight uppercase">{bin?.name || "BED"}</h2>
-              {node.id >= 100 && (
-                <span className="inline-flex items-center px-2 py-1 mt-2 rounded-md text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
-                  SIMULATION
-                </span>
-              )}
             </div>
             {!isConnected ? (
               <span className="status-offline">

@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vermikendra Dashboard",
-  description: "Scientific Vermicompost Monitoring",
+  title: "Vermikendra",
+  description: "Farmer-first vermicomposting monitoring and decision support.",
   manifest: "/manifest.json",
 };
 
