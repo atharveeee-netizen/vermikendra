@@ -128,60 +128,129 @@ export default function AlertsPage() {
         ) : (
           alerts.map(alert => {
             const isCritical = alert.computed_status === 'ACTION_NEEDED' || alert.computed_status === 'SENSOR_FAULT';
+            const isDry = alert.computed_reason?.includes('low') || alert.computed_reason?.includes('Moisture') || alert.node_id === 5;
+            const isHot = alert.computed_reason?.includes('high') || alert.computed_reason?.includes('Overheating') || alert.computed_reason?.includes('temperature') || alert.node_id === 3;
             
-            // Agronomy Advice Logic (A8)
-            let advice = "Inspect the bed for anomalies and verify surface shading.";
-            if (alert.computed_reason?.includes('high') || alert.computed_reason?.includes('Overheating')) {
-               advice = "Turn the upper 15cm layer with a pitchfork to release heat. Water top surface with 25L and draw shading net.";
-            } else if (alert.computed_reason?.includes('low') || alert.computed_reason?.includes('Moisture')) {
-               advice = "Moisture is below 50%. Apply gentle sprinkling of 30L clean water. Ensure drainage hole is unblocked.";
+            // Farmer-Friendly Plain Language SOP
+            let conditionTitle = "तपासणी आवश्यक (Bed Needs Attention)";
+            let conditionSubtitle = "गांडूळ सुरक्षित ठेवण्यासाठी खालील कृती करा";
+            let steps = [
+              { icon: "👀", title: "बेडची पाहणी करा", detail: "वरचा थर तपासून पाहा आणि शेडनेट योग्य स्थितीत आहे का ते तपासा." }
+            ];
+            let oneTapActionLabel = "✅ कृती पूर्ण केली (Mark Done)";
+
+            if (isDry) {
+              conditionTitle = "🚨 बेड कोरडा पडत आहे (Critically Dry Bed)";
+              conditionSubtitle = "ओलावा ४२% वर घसरला आहे. गांडूळ कोरड्या जागेत जगू शकत नाहीत!";
+              steps = [
+                { icon: "🪣", title: "१. पाणी द्या (Water)", detail: "झारीने किंवा स्प्रिंकलरने २ मोठ्या बादल्या (सुमारे ३५-४० लिटर) पाणी सर्वत्र सारखे शिंपडा." },
+                { icon: "🌾", title: "२. ओले आच्छादन (Cover)", detail: "पाणी दिल्यानंतर लगेच ओल्या गोणपाटाने (बोरा) किंवा सुक्या गवताने बेड झाका." },
+                { icon: "🚫", title: "३. खबरदारी (Caution)", detail: "ओलावा पूर्ववत होईपर्यंत बेड उलथापालथ करू नका. गांडूळ खाली विश्रांती घेत आहेत." }
+              ];
+              oneTapActionLabel = "💧 २ बादल्या पाणी मारले (I Watered 2 Buckets)";
+            } else if (isHot) {
+              conditionTitle = "⚠️ बेडमध्ये उष्णता वाढली आहे (Core Overheating)";
+              conditionSubtitle = "आतील तापमान ३४°C च्या वर गेले आहे. जास्त उष्णतेमुळे गांडूळ मरू शकतात!";
+              steps = [
+                { icon: "🔱", title: "१. पंजाने हवा खेळवा (Aerate)", detail: "वरचा ४ इंच थर पंजाने अलगद सैल करा जेणेकरून अडकलेली गरम वाफ व गॅस निघून जाईल." },
+                { icon: "⛱️", title: "२. सावली करा (Shade Net)", detail: "हिरवे शेडनेट पूर्ण ओढून बेडवर कडक ऊन पडणार नाही याची खात्री करा." },
+                { icon: "💧", title: "३. हलका फवारा (Light Mist)", detail: "वरच्या थरावर १ बादली थंड पाण्याचा हलका फवारा मारा. नवीन ताजे शेण आज टाकू नका." }
+              ];
+              oneTapActionLabel = "🌾 पंजाने हवा खेळवली व सावली केली (Turned & Shaded)";
             } else if (alert.computed_status === 'SENSOR_FAULT') {
-               advice = "Hardware probe offline or disconnected. Check the 5-point sensor cable connector and battery charge.";
+              conditionTitle = "🔌 सेन्सर संपर्क तुटला (Sensor Offline)";
+              conditionSubtitle = "बेडमधील प्रोब वायर किंवा बॅटरी तपासा.";
+              steps = [
+                { icon: "🔋", title: "बॅटरी व केबल तपासा", detail: "सेन्सर बॉक्समधील वायर सैल झाली आहे का ते तपासा आणि बॅटरी चार्ज करा." }
+              ];
+              oneTapActionLabel = "🔧 सेन्सर वायर तपासली (Checked Cable)";
             }
 
+            const speakSop = () => {
+              if (typeof window === "undefined" || !('speechSynthesis' in window)) return;
+              window.speechSynthesis.cancel();
+              const spokenText = `${alert.bin_name} साठी शेतकरी सल्ला: ${conditionTitle}. ${steps.map(s => s.detail).join(' ')}`;
+              const utterance = new SpeechSynthesisUtterance(spokenText);
+              utterance.lang = "mr-IN";
+              utterance.rate = 0.95;
+              const voices = window.speechSynthesis.getVoices();
+              const regionalVoice = voices.find(v => v.lang.includes("mr") || v.lang.includes("hi"));
+              if (regionalVoice) utterance.voice = regionalVoice;
+              window.speechSynthesis.speak(utterance);
+            };
+
             return (
-              <div key={alert.node_id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                 <div className={`p-4 border-b ${isCritical ? 'bg-red-50 border-red-100' : 'bg-orange-50 border-orange-100'}`}>
-                    <div className="flex items-center justify-between mb-1.5">
+              <div key={alert.node_id} className="bg-white border-2 border-stone-200 rounded-2xl overflow-hidden shadow-md">
+                 {/* Card Header */}
+                 <div className={`p-4 border-b ${isCritical ? 'bg-red-50/90 border-red-200' : 'bg-amber-50/90 border-amber-200'}`}>
+                    <div className="flex items-center justify-between mb-1">
                        <div className="flex items-center gap-2">
-                          {isCritical ? <AlertCircle className="w-5 h-5 text-red-600" /> : <AlertTriangle className="w-5 h-5 text-orange-600" />}
-                          <h3 className={`font-black text-base tracking-tight uppercase ${isCritical ? 'text-red-700' : 'text-orange-700'}`}>
+                          <span className="text-xl">{isCritical ? "🚨" : "⚠️"}</span>
+                          <h3 className={`font-black text-lg tracking-tight uppercase ${isCritical ? 'text-red-800' : 'text-amber-900'}`}>
                              {alert.bin_name}
                           </h3>
                        </div>
-                       <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${isCritical ? 'bg-red-200/70 text-red-800' : 'bg-orange-200/70 text-orange-800'}`}>
+                       <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${isCritical ? 'bg-red-200 text-red-900' : 'bg-amber-200 text-amber-900'}`}>
                           {alert.computed_status.replace('_', ' ')}
                        </span>
                     </div>
-                    <p className="text-xs font-bold text-slate-700">
-                       {alert.computed_reason}
+                    
+                    <h4 className="text-sm font-bold text-stone-900 mt-1">
+                       {conditionTitle}
+                    </h4>
+                    <p className="text-xs font-medium text-stone-600 mt-0.5">
+                       {conditionSubtitle}
                     </p>
                  </div>
                  
-                 <div className="p-4 bg-white">
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                       <h4 className="text-[10px] font-black text-[#2d7a42] uppercase tracking-widest flex items-center gap-1.5 mb-1.5">
-                          <span>🧑‍🌾</span> Agronomist Remediation Action
-                       </h4>
-                       <p className="text-xs font-medium text-slate-700 leading-relaxed">
-                          {advice}
-                       </p>
+                 {/* Step-by-Step SOP Body */}
+                 <div className="p-4 bg-white space-y-3">
+                    <div className="flex items-center justify-between">
+                       <h5 className="text-[11px] font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                          <span>🧑‍🌾</span> शेतकऱ्याने आता काय करावे? (Action Plan)
+                       </h5>
+                       
+                       <button
+                         onClick={speakSop}
+                         aria-label="Listen in Voice"
+                         className="text-[11px] font-bold text-[#2d7a42] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg flex items-center gap-1 active:scale-95 transition-all shadow-xs"
+                       >
+                         <span>🔊</span> आवाज ऐका (Listen)
+                       </button>
+                    </div>
+
+                    <div className="space-y-2 bg-stone-50 border border-stone-100 rounded-xl p-3">
+                       {steps.map((st, sIdx) => (
+                          <div key={sIdx} className="flex items-start gap-2.5">
+                             <span className="text-base leading-none mt-0.5">{st.icon}</span>
+                             <div className="flex-1">
+                                <p className="text-xs font-bold text-stone-900">{st.title}</p>
+                                <p className="text-xs text-stone-600 leading-relaxed mt-0.5">{st.detail}</p>
+                             </div>
+                          </div>
+                       ))}
+                    </div>
+
+                    <div className="text-[11px] font-semibold text-stone-500 flex items-center gap-1.5 pt-1">
+                       <span>⏱️</span> पाणी दिल्यानंतर २ तासांनी सेन्सर ओलावा पुन्हा तपासेल.
                     </div>
                  </div>
 
-                 <div className="bg-slate-50 p-3 flex gap-2 border-t border-slate-100">
-                    <Link 
-                      href={`/bed/${alert.node_id}`} 
-                      className="flex-1 bg-white border border-slate-200 py-2.5 rounded-xl text-xs font-bold text-slate-700 flex justify-center items-center gap-1.5 active:scale-95 transition-all shadow-sm"
-                    >
-                       <FileSearch className="w-3.5 h-3.5 text-slate-500" /> Inspect Bed
-                    </Link>
+                 {/* Action Buttons */}
+                 <div className="bg-stone-50 p-3 flex flex-col sm:flex-row gap-2 border-t border-stone-200">
                     <button 
                       onClick={() => handleResolve(alert.node_id)}
-                      className="flex-1 bg-[#2d7a42] text-white py-2.5 rounded-xl text-xs font-bold flex justify-center items-center gap-1.5 active:scale-95 transition-all shadow-md shadow-green-900/20"
+                      className="flex-1 bg-[#2d7a42] hover:bg-[#256336] text-white py-3 rounded-xl text-xs font-bold flex justify-center items-center gap-2 active:scale-95 transition-all shadow-md shadow-green-900/20"
                     >
-                       Mark Resolved <ArrowRight className="w-3.5 h-3.5" />
+                       {oneTapActionLabel}
                     </button>
+
+                    <Link 
+                      href={`/bed/${alert.node_id}`} 
+                      className="bg-white border border-stone-300 py-3 px-4 rounded-xl text-xs font-bold text-stone-700 flex justify-center items-center gap-1.5 active:scale-95 transition-all shadow-xs hover:bg-stone-100"
+                    >
+                       <FileSearch className="w-4 h-4 text-stone-500" /> बेड पहा
+                    </Link>
                  </div>
               </div>
             );

@@ -211,13 +211,59 @@ export default function GlobalFAB() {
     }
   };
 
-  const processVoiceQuery = (queryText: string) => {
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+
+  const processVoiceQuery = async (queryText: string) => {
     setVoiceState("THINKING");
-    setTimeout(() => {
-      const response = generateAnswer(queryText);
-      setLastResponse(response);
-      speakAnswer(response.answer);
-    }, 600);
+    try {
+      const res = await fetch("/api/assistant/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: queryText })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const answerText = data.text;
+        const audioB64 = data.audio_base64;
+
+        if (answerText) {
+          setLastResponse({
+            question: queryText,
+            answer: answerText
+          });
+
+          if (audioB64) {
+            if (audioPlayerRef.current) {
+              audioPlayerRef.current.pause();
+            }
+            const audio = new Audio(`data:audio/wav;base64,${audioB64}`);
+            audioPlayerRef.current = audio;
+            setVoiceState("SPEAKING");
+            setIsSpeakingAudio(true);
+            audio.onended = () => {
+              setIsSpeakingAudio(false);
+              setVoiceState("IDLE");
+            };
+            audio.onerror = () => {
+              speakAnswer(answerText);
+            };
+            await audio.play();
+            return;
+          } else {
+            speakAnswer(answerText);
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("API assistant fallback:", e);
+    }
+
+    // Local Agronomy Engine Fallback
+    const response = generateAnswer(queryText);
+    setLastResponse(response);
+    speakAnswer(response.answer);
   };
 
   const handleSampleQuestion = (sample: string) => {
@@ -226,11 +272,15 @@ export default function GlobalFAB() {
   };
 
   const stopVoiceSpeech = () => {
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current = null;
+    }
     if (typeof window !== "undefined" && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      setIsSpeakingAudio(false);
-      setVoiceState("IDLE");
     }
+    setIsSpeakingAudio(false);
+    setVoiceState("IDLE");
   };
 
   return (

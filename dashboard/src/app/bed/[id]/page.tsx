@@ -134,6 +134,149 @@ export default function BedDetail() {
 
       <main className="p-4 flex flex-col gap-4 max-w-lg mx-auto w-full -mt-4 relative z-20">
         
+        {/* Farmer Action Guide Banner (Translates sensor telemetry into concrete farmer tasks) */}
+        {(() => {
+          const isDry = telemetry?.computed_status === 'ACTION_NEEDED' || (telemetry?.moisture_raw != null && telemetry.moisture_raw < 50);
+          const isHot = telemetry?.computed_status === 'WATCH' || (telemetry?.probe_4 != null && telemetry.probe_4 > 33);
+          
+          if (isDry) {
+            return (
+              <section className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 shadow-sm animate-fadeIn">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-red-800 flex items-center gap-1.5">
+                    🚨 शेतकऱ्याने ताबडतोब काय करावे? (Action Required)
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (typeof window !== "undefined" && 'speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                        const utterance = new SpeechSynthesisUtterance("बेड क्रमांक पाच कोरडा पडत आहे. ताबडतोब दोन मोठ्या बादल्या पाणी शिंपडा आणि ओल्या गोणपाटाने झाकून ठेवा.");
+                        utterance.lang = "mr-IN";
+                        window.speechSynthesis.speak(utterance);
+                      }
+                    }}
+                    className="text-[11px] font-bold text-red-700 bg-red-100 hover:bg-red-200 px-2 py-0.5 rounded-md flex items-center gap-1"
+                  >
+                    <span>🔊</span> आवाज ऐका
+                  </button>
+                </div>
+                
+                <h3 className="text-sm font-black text-red-900 mb-1">
+                  बेड कोरडा पडत आहे — गांडूळ खाली जमिनीत चालले आहेत!
+                </h3>
+                
+                <div className="space-y-1.5 my-3 bg-white/80 rounded-xl p-3 border border-red-100 text-xs">
+                  <div className="flex items-start gap-2">
+                    <span>🪣</span>
+                    <p className="text-stone-800 font-bold">१. दोन बादल्या पाणी शिंपडा (३५-४० लिटर) झारीने किंवा फवाऱ्याने.</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span>🌾</span>
+                    <p className="text-stone-800 font-bold">२. ओल्या गोणपाटाने (बोरा) बेड पूर्ण झाका म्हणजे ऊन लागणार नाही.</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span>🚫</span>
+                    <p className="text-stone-700">३. आज बेड उलथापालथ करू नका. ओलावा वाढू द्या.</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const newLog: ActionLog = {
+                      id: Date.now().toString(),
+                      action: "Watered Bed (2 Buckets / 35L)",
+                      detail: "Farmer applied 2 buckets of water following low moisture alert.",
+                      timestamp: "Just now"
+                    };
+                    setLogs([newLog, ...logs]);
+                    alert("✅ कृती यशस्वीरित्या नोंदवली गेली! २ तासांत सेन्सर ओलावा पुन्हा तपासेल.");
+                  }}
+                  className="w-full bg-red-600 hover:bg-red-700 active:scale-98 text-white font-bold text-xs py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-1.5 transition-all"
+                >
+                  💧 मी २ बादल्या पाणी मारले (Record 2 Buckets Done)
+                </button>
+              </section>
+            );
+          }
+
+          if (isHot) {
+            return (
+              <section className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 shadow-sm animate-fadeIn">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                    ⚠️ शेतकऱ्याने काय करावे? (Heat Warning)
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (typeof window !== "undefined" && 'speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                        const utterance = new SpeechSynthesisUtterance("बेडमध्ये उष्णता ३४ अंशांच्या वर गेली आहे. पंजाने वरचा थर सैल करा आणि शेडनेट ओढून सावली करा.");
+                        utterance.lang = "mr-IN";
+                        window.speechSynthesis.speak(utterance);
+                      }
+                    }}
+                    className="text-[11px] font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1"
+                  >
+                    <span>🔊</span> आवाज ऐका
+                  </button>
+                </div>
+                
+                <h3 className="text-sm font-black text-amber-900 mb-1">
+                  आत उष्णता वाढली आहे ({telemetry?.probe_4 || "34.2"}°C) — गांडूळांना धोका आहे!
+                </h3>
+                
+                <div className="space-y-1.5 my-3 bg-white/80 rounded-xl p-3 border border-amber-100 text-xs">
+                  <div className="flex items-start gap-2">
+                    <span>🔱</span>
+                    <p className="text-stone-800 font-bold">१. वरचा ४ इंच थर पंजाने अलगद सैल करा (वाफ निघून जाईल).</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span>⛱️</span>
+                    <p className="text-stone-800 font-bold">२. शेडनेट ओढून कडक उन्हापासून सावली करा.</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span>💧</span>
+                    <p className="text-stone-700">३. १ बादली थंड पाण्याचा हलका फवारा मारा. नवीन शेण टाकू नका.</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const newLog: ActionLog = {
+                      id: Date.now().toString(),
+                      action: "Fork-turned & Shaded Bed",
+                      detail: "Farmer loosened top layer and ensured shade netting.",
+                      timestamp: "Just now"
+                    };
+                    setLogs([newLog, ...logs]);
+                    alert("✅ कृती नोंदवली! उष्णता कमी झाल्यावर स्टेटस पूर्ववत होईल.");
+                  }}
+                  className="w-full bg-amber-600 hover:bg-amber-700 active:scale-98 text-white font-bold text-xs py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-1.5 transition-all"
+                >
+                  🌾 मी पंजाने हवा खेळवली व सावली केली (Mark Done)
+                </button>
+              </section>
+            );
+          }
+
+          return (
+            <section className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 shadow-xs flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
+                  🟢
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-emerald-950">सर्व काही उत्तम आहे (Bed in Optimal Health)</h3>
+                  <p className="text-[11px] text-emerald-800">ओलावा आणि तापमान योग्य आहे. गांडूळ वेगाने खत तयार करत आहेत.</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold bg-emerald-200/70 text-emerald-900 px-2 py-0.5 rounded-full">
+                सुरक्षित
+              </span>
+            </section>
+          );
+        })()}
+
         {/* Status Card */}
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
            <div className="flex justify-between items-center mb-1">
