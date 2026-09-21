@@ -17,15 +17,14 @@ export function useTelemetry(nodeId: number | null) {
       setIsConnected(true);
       const interval = setInterval(() => {
         setTelemetry((prev) => {
-          const base = prev || { node: nodeId, ambient_c: 25, probe_1: 22, co2_ppm: 400, seq: 0, faults: 0 };
+          const base = prev || { node_id: nodeId, ambient_c: 25, probe_1: 22, co2_ppm: 400, faults: 0, ts: new Date().toISOString() };
           return {
             ...base,
             ambient_c: base.ambient_c! + (Math.random() - 0.5),
             probe_1: base.probe_1! + (Math.random() - 0.2),
             co2_ppm: base.co2_ppm! + (Math.random() * 10 - 5),
-            seq: (base.seq || 0) + 1,
             ts: new Date().toISOString()
-          } as TelemetryContract;
+          } as unknown as TelemetryContract;
         });
       }, 2500);
       return () => clearInterval(interval);
