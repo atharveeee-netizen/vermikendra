@@ -11,6 +11,8 @@ export const viewport: Viewport = {
   themeColor: "#2d7a42",
 };
 
+import BottomNav from "../components/BottomNav";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -18,8 +20,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen">
+      <body className="min-h-screen bg-[#F9F8F4]">
         {children}
+        <BottomNav />
       </body>
     </html>
   );

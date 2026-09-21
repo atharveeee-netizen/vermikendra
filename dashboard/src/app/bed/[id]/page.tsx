@@ -1,0 +1,243 @@
+"use client";
+
+import { useEffect, useState, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { fetchLatestTelemetry } from "../../../services/api";
+import { useTelemetry } from "../../../hooks/useTelemetry";
+import { TelemetryContract, AssistantResponse } from "../../../types";
+import { ArrowLeft } from "lucide-react";
+
+const i18n = {
+  "en-IN": { greeting: "Bed Telemetry", ask: "Ask Vermi", offline: "Offline - showing last recorded data." },
+  "hi-IN": { greeting: "बेड टेलीमेट्री", ask: "बोलकर पूछें", offline: "ऑफ़लाइन - पिछला डेटा दिखाया जा रहा है।" },
+  "gu-IN": { greeting: "બેડ ટેલિમેટ્રી", ask: "બોલીને પૂછો", offline: "ઑફલાઇન - છેલ્લો ડેટા બતાવવામાં આવી રહ્યો છે." }
+};
+
+type VoiceState = "IDLE" | "LISTENING" | "THINKING" | "SPEAKING" | "ERROR";
+
+export default function BedDetail() {
+  const params = useParams();
+  const router = useRouter();
+  const nodeId = parseInt(params.id as string, 10);
+
+  const [language, setLanguage] = useState<"en-IN" | "hi-IN" | "gu-IN">("en-IN");
+  const [initError, setInitError] = useState("");
+
+  const { telemetry, isConnected, setTelemetry } = useTelemetry(nodeId || null);
+
+  const [voiceState, setVoiceState] = useState<VoiceState>("IDLE");
+  const [voiceError, setVoiceError] = useState("");
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  useEffect(() => {
+    async function init() {
+      if (!nodeId || isNaN(nodeId)) {
+        setInitError("Invalid bed ID.");
+        return;
+      }
+      try {
+        const latest = await fetchLatestTelemetry(nodeId);
+        setTelemetry(latest);
+      } catch (err) {
+        setInitError("Cannot reach Vermikendra gateway.");
+      }
+    }
+    init();
+  }, [nodeId, setTelemetry]);
+
+  const handleStartListening = async () => {
+    try {
+      setVoiceError("");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        setVoiceState("THINKING");
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        await sendAudioToAssistant(audioBlob);
+      };
+
+      mediaRecorder.start();
+      setVoiceState("LISTENING");
+    } catch (error) {
+      setVoiceError("Microphone access denied.");
+      setVoiceState("ERROR");
+    }
+  };
+
+  const handleStopListening = () => {
+    if (mediaRecorderRef.current && voiceState === "LISTENING") {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
+    }
+  };
+
+  const sendAudioToAssistant = async (audioBlob: Blob) => {
+    if (!nodeId) return;
+    try {
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "question.webm");
+      formData.append("language", language);
+      formData.append("node_id", nodeId.toString());
+
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const res = await fetch(`${API_BASE}/assistant/voice`, { method: "POST", body: formData });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData?.error?.message || "Assistant unavailable.");
+      }
+
+      const responseData: AssistantResponse = await res.json();
+      
+      if (responseData.audio_status === "ok" && responseData.audio_base64) {
+        const audioUrl = `data:audio/wav;base64,${responseData.audio_base64}`;
+        const audio = new Audio(audioUrl);
+        setVoiceState("SPEAKING");
+        audio.onended = () => setVoiceState("IDLE");
+        await audio.play();
+      } else {
+        setVoiceError(responseData.answer_text + "\n(Voice playback unavailable)");
+        setVoiceState("ERROR");
+        setTimeout(() => { setVoiceState("IDLE"); setVoiceError(""); }, 5000);
+      }
+      
+    } catch (error: any) {
+      setVoiceError(error.message);
+      setVoiceState("ERROR");
+      setTimeout(() => setVoiceState("IDLE"), 5000);
+    }
+  };
+
+  if (initError) {
+    return (
+       <div className="flex flex-col min-h-screen">
+          <header className="bg-white p-4 shadow-sm flex items-center gap-4">
+             <button onClick={() => router.back()}><ArrowLeft /></button>
+             <h1 className="text-xl font-bold">Error</h1>
+          </header>
+          <div className="p-8 text-red-600 font-bold">{initError}</div>
+       </div>
+    );
+  }
+
+  const currentTemp = telemetry?.ambient_c ?? telemetry?.probe_1;
+  const statusColor = telemetry?.computed_status === 'ACTION_NEEDED' ? 'status-critical' :
+                      telemetry?.computed_status === 'WATCH' ? 'status-warning' :
+                      telemetry?.computed_status === 'SENSOR_FAULT' ? 'status-critical' :
+                      'status-normal';
+
+  let timeAgo = "Just now";
+  if (telemetry?.ts) {
+     const ms = new Date().getTime() - new Date(telemetry.ts).getTime();
+     const mins = Math.floor(ms / 60000);
+     if (mins > 0) timeAgo = `${mins} min ago`;
+  }
+
+  const strings = i18n[language];
+
+  return (
+    <div className="flex flex-col min-h-screen pb-20">
+      <header className="bg-white p-4 shadow-sm flex justify-between items-center sticky top-0 z-10 border-b border-slate-200">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-slate-100">
+             <ArrowLeft className="w-6 h-6 text-slate-700" />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold uppercase tracking-wider">BED {nodeId}</h1>
+            <p className="text-slate-500 text-xs">{strings.greeting}</p>
+          </div>
+        </div>
+        <select 
+          className="bg-slate-100 border border-slate-200 rounded p-2 text-sm font-bold"
+          value={language}
+          onChange={(e) => setLanguage(e.target.value as any)}
+        >
+          <option value="en-IN">EN</option>
+          <option value="hi-IN">हिंदी</option>
+          <option value="gu-IN">ગુજ</option>
+        </select>
+      </header>
+
+      <main className="p-4 flex flex-col gap-6 flex-grow max-w-lg mx-auto w-full pb-24">
+        
+        <section className="vk-card">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h2 className="text-2xl font-black tracking-tight uppercase">NODE {nodeId}</h2>
+            </div>
+            {!isConnected ? (
+              <span className="status-offline">
+                <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                OFFLINE
+              </span>
+            ) : (
+              <span className={statusColor}>
+                <span className="w-2 h-2 rounded-full bg-current"></span>
+                {telemetry?.computed_status || "NORMAL"}
+              </span>
+            )}
+          </div>
+          
+          <div className="border-t border-slate-100 pt-4 grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-slate-500 font-semibold uppercase tracking-wider mb-1">Temperature</p>
+              <p className="text-2xl font-bold">{currentTemp ? `${currentTemp.toFixed(1)} °C` : "--"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500 font-semibold uppercase tracking-wider mb-1">Moisture</p>
+              <p className="text-2xl font-bold">{telemetry?.moisture_raw ? telemetry.moisture_raw : "Unknown"}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-sm text-slate-500 font-semibold uppercase tracking-wider mb-1">Activity (CO2)</p>
+              <p className="text-xl font-bold">{telemetry?.co2_ppm ? `${telemetry.co2_ppm} ppm` : "--"}</p>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-400 font-bold uppercase">
+             <span>Sensor: {telemetry?.quality || "UNKNOWN"}</span>
+             <span>Updated: {timeAgo}</span>
+          </div>
+          
+          {!isConnected && (
+             <div className="mt-4 p-3 bg-slate-50 rounded text-sm text-slate-600 border border-slate-200">
+               {strings.offline}
+             </div>
+          )}
+        </section>
+
+        <section className="mt-2 flex flex-col items-center">
+          <button 
+            className={`w-full max-w-xs aspect-[4/1] rounded-2xl flex items-center justify-center gap-3 text-white font-bold text-lg shadow-md transition-all active:scale-95 ${
+              voiceState === "IDLE" || voiceState === "ERROR" ? "bg-[#2d7a42]" :
+              voiceState === "LISTENING" ? "bg-red-600 animate-pulse" :
+              voiceState === "THINKING" ? "bg-[#dd6b20]" :
+              "bg-blue-600"
+            }`}
+            onClick={voiceState === "LISTENING" ? handleStopListening : handleStartListening}
+            disabled={voiceState === "THINKING" || voiceState === "SPEAKING"}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+            </svg>
+            {voiceState === "IDLE" && strings.ask}
+            {voiceState === "LISTENING" && "Listening..."}
+            {voiceState === "THINKING" && "Thinking..."}
+            {voiceState === "SPEAKING" && "Answering..."}
+            {voiceState === "ERROR" && "Try Again"}
+          </button>
+          
+          {voiceError && <p className="text-red-600 text-sm mt-3 font-semibold text-center whitespace-pre-wrap">{voiceError}</p>}
+        </section>
+
+      </main>
+    </div>
+  );
+}
