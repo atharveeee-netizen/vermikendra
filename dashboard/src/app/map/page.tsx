@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { fetchSites, fetchFields, fetchSiteFleet } from '@/services/api';
-import { Field, Site, FleetData, FleetNode } from '@/types';
+import { fetchSites, fetchFields, fetchSiteFleet, fetchBins, getDemoBins } from '@/services/api';
+import { Field, Site, FleetData, FleetNode, Bin } from '@/types';
 import dynamic from 'next/dynamic';
 import { Navigation, Layers, X, ChevronRight, Activity, Map as MapIcon, Globe } from 'lucide-react';
 import Link from 'next/link';
@@ -67,13 +67,11 @@ export default function MapPage() {
   }, []);
 
   // For the map, we need the original bins since FleetNode lacks lat/lon
-  // So I need to fetch bins as well.
-  const [bins, setBins] = useState<any[]>([]);
+  const [bins, setBins] = useState<Bin[]>(getDemoBins());
   useEffect(() => {
       async function loadBins() {
           if (sites.length > 0) {
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/sites/${sites[0].id}/bins`);
-              const b = await res.json();
+              const b = await fetchBins(sites[0].id);
               setBins(b);
           }
       }
