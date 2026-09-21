@@ -12,6 +12,7 @@ export const viewport: Viewport = {
 };
 
 import BottomNav from "../components/BottomNav";
+import GlobalFAB from "../components/GlobalFAB";
 
 export default function RootLayout({
   children,
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen bg-[#F9F8F4]">
         {children}
+        <GlobalFAB />
         <BottomNav />
       </body>
     </html>

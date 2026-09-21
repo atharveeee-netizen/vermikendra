@@ -46,6 +46,10 @@ export interface TelemetryContract {
   quality: 'VALID' | 'STALE' | 'FAULT' | 'MISSING';
   computed_status?: 'NORMAL' | 'WATCH' | 'ACTION_NEEDED' | 'OFFLINE' | 'SENSOR_FAULT';
   computed_reason?: string;
+  mac_address?: string;
+  fw_version?: string;
+  bin_name?: string;
+  field_id?: string;
 }
 
 export interface AssistantResponse {
@@ -64,4 +68,30 @@ export interface ApiError {
     message: string;
     retryable: boolean;
   }
+}
+
+export interface FleetNode {
+  node_id: number;
+  bin_id: string;
+  field_id: string | null;
+  bin_name: string;
+  mac_address: string | null;
+  last_seen: string | null;
+  latest_telemetry: TelemetryContract | null;
+  computed_status: 'NORMAL' | 'WATCH' | 'ACTION_NEEDED' | 'OFFLINE' | 'SENSOR_FAULT';
+  computed_reason?: string;
+}
+
+export interface FleetStats {
+  total: number;
+  online: number;
+  offline: number;
+  normal: number;
+  attention: number;
+  critical: number;
+}
+
+export interface FleetData {
+  nodes: FleetNode[];
+  stats: FleetStats;
 }

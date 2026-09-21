@@ -32,3 +32,9 @@ export async function fetchLatestTelemetry(nodeId: number): Promise<TelemetryCon
   if (!res.ok) throw new Error("Failed to fetch telemetry");
   return res.json();
 }
+
+export async function fetchSiteFleet(siteId: string): Promise<import('../types').FleetData> {
+  const res = await fetch(`${API_BASE}/sites/${siteId}/fleet`);
+  if (!res.ok) throw new Error("Failed to fetch fleet data");
+  return res.json();
+}

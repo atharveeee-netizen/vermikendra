@@ -28,9 +28,16 @@ const icons = {
 interface FarmMapProps {
   fields: Field[];
   bins: Bin[];
+  tileLayer: 'street' | 'satellite';
+  onMarkerClick?: (binId: string) => void;
 }
 
-function MapUpdater({ bins, fields }: FarmMapProps) {
+interface MapUpdaterProps {
+  fields: Field[];
+  bins: Bin[];
+}
+
+function MapUpdater({ bins, fields }: MapUpdaterProps) {
   const map = useMap();
   useEffect(() => {
     if (bins.length === 0 && fields.length === 0) return;
@@ -70,7 +77,13 @@ function MapUpdater({ bins, fields }: FarmMapProps) {
   return null;
 }
 
-export default function FarmMap({ fields, bins }: FarmMapProps) {
+export default function FarmMap({ fields, bins, tileLayer, onMarkerClick }: FarmMapProps) {
+  const streetUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  const satelliteUrl = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+  const attribution = tileLayer === 'street' 
+    ? '&copy; OpenStreetMap contributors' 
+    : 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
+
   return (
     <MapContainer 
       center={[18.520, 73.856]} 
@@ -79,8 +92,9 @@ export default function FarmMap({ fields, bins }: FarmMapProps) {
       zoomControl={false}
     >
       <TileLayer
-        attribution='&copy; OpenStreetMap contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution={attribution}
+        url={tileLayer === 'street' ? streetUrl : satelliteUrl}
+        maxZoom={18}
       />
       
       {fields.map(field => {
@@ -106,28 +120,19 @@ export default function FarmMap({ fields, bins }: FarmMapProps) {
 
       {bins.map(bin => {
         if (!bin.latitude || !bin.longitude) return null;
+        // The real implementation would color based on live status, but for this component it takes bin data
         const icon = icons.NORMAL; 
         return (
           <Marker 
             key={bin.id} 
             position={[bin.latitude, bin.longitude]}
             icon={icon}
-          >
-            <Popup className="vermikendra-popup">
-              <div className="flex flex-col gap-2 min-w-[150px]">
-                <div>
-                  <h3 className="font-black text-slate-800 uppercase tracking-tighter text-sm">{bin.name}</h3>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#2d7a42] bg-green-50 px-1 py-0.5 rounded">NORMAL</span>
-                </div>
-                <Link 
-                  href={`/bed/${bin.id}`}
-                  className="bg-slate-900 text-white text-xs font-bold uppercase tracking-wider text-center py-2 rounded shadow-md active:scale-95 transition-transform"
-                >
-                  View Details
-                </Link>
-              </div>
-            </Popup>
-          </Marker>
+            eventHandlers={{
+              click: () => {
+                if (onMarkerClick) onMarkerClick(bin.id);
+              },
+            }}
+          />
         );
       })}
       
